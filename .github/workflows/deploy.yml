@@ -67,7 +67,7 @@ jobs:
           script: |
             echo "⏹️  Stopping existing containers..."
             cd ${{ env.DEPLOY_PATH }}
-            docker-compose down 2>/dev/null || true
+            docker compose down 2>/dev/null || true
             echo "✅ Containers stopped"
 
       - name: Setup environment and start Docker Compose
@@ -89,14 +89,14 @@ jobs:
               echo "⚠️  Please configure .env file with your production settings"
             fi
             
-            # Start Docker Compose
+            # Start Docker Compose (using docker compose plugin)
             echo "🚀 Starting containers..."
-            docker-compose up -d --build
+            docker compose up -d --build
             
             echo ""
             echo "✅ Docker Compose started!"
             echo "📊 Container status:"
-            docker-compose ps
+            docker compose ps
 
       - name: Verify deployment
         uses: appleboy/ssh-action@master
@@ -112,11 +112,11 @@ jobs:
             
             echo ""
             echo "📊 Container status:"
-            docker-compose ps
+            docker compose ps
             
             echo ""
             echo "📋 Recent logs:"
-            docker-compose logs --tail=20
+            docker compose logs --tail=20
             
             echo ""
             echo "🌐 Testing API endpoint..."
