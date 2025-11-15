@@ -5,7 +5,9 @@ const prisma = new PrismaClient();
 
 export class TestHelpers {
   static async createUser(overrides: Partial<any> = {}) {
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    // Default password meets new requirements: min 8 chars, uppercase, lowercase, number
+    const defaultPassword = 'SecurePass123';
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
     return prisma.user.create({
       data: {
         email: overrides.email || `test${Date.now()}@example.com`,
@@ -70,6 +72,12 @@ export class TestHelpers {
         "posts",
         "follows",
         "refresh_tokens",
+        "user_preferences",
+        "rates",
+        "availabilities",
+        "locations",
+        "websites",
+        "social_links",
         "users"
       CASCADE;`);
 
@@ -98,6 +106,12 @@ export class TestHelpers {
         await prisma.post.deleteMany();
         await prisma.follow.deleteMany();
         await prisma.refreshToken.deleteMany();
+        await prisma.userPreferences.deleteMany();
+        await prisma.rate.deleteMany();
+        await prisma.availability.deleteMany();
+        await prisma.location.deleteMany();
+        await prisma.website.deleteMany();
+        await prisma.socialLink.deleteMany();
         await prisma.user.deleteMany();
       } catch {
         // Ignore errors during cleanup
@@ -117,6 +131,7 @@ export class TestHelpers {
     });
 
     const body = JSON.parse(response.body);
-    return body.jwtToken;
+    // Support both old and new response formats
+    return body.tokens?.accessToken || body.jwtToken;
   }
 }
