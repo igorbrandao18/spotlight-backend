@@ -36,6 +36,8 @@
 ### ✅ Users Module
 **Files:**
 - `src/users/users.service.spec.ts` - ✅ Complete
+- `src/users/users.controller.spec.ts` - ✅ Complete
+- `test/users.e2e-spec.ts` - ✅ Complete
 
 **Coverage:**
 - ✅ Get user profile (getMe)
@@ -54,6 +56,7 @@
 ### ✅ Posts Module
 **Files:**
 - `src/posts/posts.service.spec.ts` - ✅ Complete
+- `src/posts/posts.controller.spec.ts` - ✅ Complete
 - `test/posts.e2e-spec.ts` - ✅ Complete
 
 **Coverage:**
@@ -75,6 +78,7 @@
 ### ✅ Projects Module
 **Files:**
 - `src/projects/projects.service.spec.ts` - ✅ Complete
+- `src/projects/projects.controller.spec.ts` - ✅ Complete
 - `test/projects.e2e-spec.ts` - ✅ Complete
 
 **Coverage:**
@@ -96,6 +100,8 @@
 ### ✅ Chat Module
 **Files:**
 - `src/chat/chat.service.spec.ts` - ✅ Complete
+- `src/chat/chat.controller.spec.ts` - ✅ Complete
+- `test/chat.e2e-spec.ts` - ✅ Complete
 
 **Coverage:**
 - ✅ List chat rooms
@@ -112,6 +118,8 @@
 ### ✅ Portfolio Module
 **Files:**
 - `src/portfolio/portfolio.service.spec.ts` - ✅ Complete
+- `src/portfolio/portfolio.controller.spec.ts` - ✅ Complete
+- `test/portfolio.e2e-spec.ts` - ✅ Complete
 
 **Coverage:**
 - ✅ Create portfolio item
@@ -131,6 +139,8 @@
 ### ✅ Partner Stores Module
 **Files:**
 - `src/partner-stores/partner-stores.service.spec.ts` - ✅ Complete
+- `src/partner-stores/partner-stores.controller.spec.ts` - ✅ Complete
+- `test/partner-stores.e2e-spec.ts` - ✅ Complete
 
 **Coverage:**
 - ✅ Create store (admin only)
@@ -151,6 +161,8 @@
 ### ✅ Reports Module
 **Files:**
 - `src/reports/reports.service.spec.ts` - ✅ Complete
+- `src/reports/reports.controller.spec.ts` - ✅ Complete
+- `test/reports.e2e-spec.ts` - ✅ Complete
 
 **Coverage:**
 - ✅ Create report
@@ -165,8 +177,12 @@
 
 ## 📈 Overall Statistics
 
-- **Total Test Files:** 12+
-- **Total Test Cases:** 70+ tests
+- **Total Test Files:** 24+
+  - **Service Tests:** 8 files
+  - **Controller Tests:** 8 files
+  - **Integration Tests:** 1 file
+  - **E2E Tests:** 8 files
+- **Total Test Cases:** 150+ tests
 - **Modules Covered:** 8/8 (100%)
 - **Database:** Real PostgreSQL (NO MOCKS)
 - **Test Types:** Unit, Integration, E2E
