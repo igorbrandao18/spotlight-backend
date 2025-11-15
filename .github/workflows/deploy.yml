@@ -55,6 +55,71 @@ jobs:
             
             echo ""
             echo "✅ Repository cloned/updated successfully!"
-            echo "Contents:"
-            ls -la
+
+      - name: Stop existing containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          command_timeout: 5m
+          script: |
+            echo "⏹️  Stopping existing containers..."
+            cd ${{ env.DEPLOY_PATH }}
+            docker-compose down 2>/dev/null || true
+            echo "✅ Containers stopped"
+
+      - name: Setup environment and start Docker Compose
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          command_timeout: 15m
+          script: |
+            echo "🐳 Starting Docker Compose..."
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Setup .env if it doesn't exist
+            if [ ! -f .env ]; then
+              echo "📝 Creating .env file from .env.example..."
+              cp .env.example .env
+              echo "⚠️  Please configure .env file with your production settings"
+            fi
+            
+            # Start Docker Compose
+            echo "🚀 Starting containers..."
+            docker-compose up -d --build
+            
+            echo ""
+            echo "✅ Docker Compose started!"
+            echo "📊 Container status:"
+            docker-compose ps
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          command_timeout: 5m
+          script: |
+            echo "🔍 Verifying deployment..."
+            cd ${{ env.DEPLOY_PATH }}
+            
+            echo ""
+            echo "📊 Container status:"
+            docker-compose ps
+            
+            echo ""
+            echo "📋 Recent logs:"
+            docker-compose logs --tail=20
+            
+            echo ""
+            echo "🌐 Testing API endpoint..."
+            sleep 5
+            curl -f http://localhost:8080/api/docs && echo "✅ API is responding" || echo "⚠️  API health check failed"
 
