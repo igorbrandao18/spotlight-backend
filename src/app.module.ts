@@ -9,10 +9,24 @@ import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ChatModule } from './chat/chat.module';
+import { PortfolioModule } from './portfolio/portfolio.module';
+import { PartnerStoresModule } from './partner-stores/partner-stores.module';
+import { ReportsModule } from './reports/reports.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
-  imports: [ConfigModule, PrismaModule, AuthModule, UsersModule, PostsModule, ProjectsModule, ChatModule],
+  imports: [
+    ConfigModule,
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    PostsModule,
+    ProjectsModule,
+    ChatModule,
+    PortfolioModule,
+    PartnerStoresModule,
+    ReportsModule,
+  ],
   controllers: [AppController],
   providers: [
     AppService,
