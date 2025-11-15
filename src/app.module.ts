@@ -8,10 +8,11 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
 import { ProjectsModule } from './projects/projects.module';
+import { ChatModule } from './chat/chat.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
-  imports: [ConfigModule, PrismaModule, AuthModule, UsersModule, PostsModule, ProjectsModule],
+  imports: [ConfigModule, PrismaModule, AuthModule, UsersModule, PostsModule, ProjectsModule, ChatModule],
   controllers: [AppController],
   providers: [
     AppService,
