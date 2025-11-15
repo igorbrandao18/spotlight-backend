@@ -32,6 +32,7 @@ import { CreatePortfolioCommentDto } from './dto/create-comment.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../common/interfaces/user.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('portfolio')
 @ApiBearerAuth('JWT-auth')
@@ -41,8 +42,14 @@ export class PortfolioController {
   constructor(private readonly portfolioService: PortfolioService) {}
 
   @Get()
-  async findAll(@Query('userId') userId?: string) {
-    return this.portfolioService.findAll(userId);
+  @ApiQuery({ name: 'userId', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async findAll(
+    @Query('userId') userId?: string,
+    @Query() pagination: PaginationDto = { page: 1, limit: 20 },
+  ) {
+    return this.portfolioService.findAll(userId, pagination);
   }
 
   @Post()

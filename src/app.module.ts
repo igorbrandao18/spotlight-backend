@@ -15,26 +15,29 @@ import { PartnerStoresModule } from './partner-stores/partner-stores.module';
 import { ReportsModule } from './reports/reports.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
+// Rate limiting configuration - more permissive in development/testing
+const isProduction = process.env.NODE_ENV === 'production';
+
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
-    // Rate limiting configuration
+    // Rate limiting configuration - adjusted for development/testing environments
     ThrottlerModule.forRoot([
       {
         name: 'short',
         ttl: 60000, // 1 minute
-        limit: 100, // 100 requests per minute (general API)
+        limit: isProduction ? 100 : 1000, // More permissive in dev/test
       },
       {
         name: 'medium',
         ttl: 900000, // 15 minutes
-        limit: 5, // 5 requests per 15 minutes (login attempts)
+        limit: isProduction ? 5 : 100, // More permissive in dev/test for load testing
       },
       {
         name: 'long',
         ttl: 3600000, // 1 hour
-        limit: 3, // 3 requests per hour (registration, password reset)
+        limit: isProduction ? 3 : 100, // More permissive in dev/test for load testing
       },
     ]),
     AuthModule,

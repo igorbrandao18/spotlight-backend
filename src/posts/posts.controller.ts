@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -20,6 +21,7 @@ import {
   ApiBearerAuth,
   ApiConsumes,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
@@ -30,6 +32,7 @@ import { CreateReactionDto } from './dto/create-reaction.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../common/interfaces/user.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('posts')
 @ApiBearerAuth('JWT-auth')
@@ -39,8 +42,13 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Get()
-  async findAll(@CurrentUser() user: any) {
-    return this.postsService.findAll(user.id);
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async findAll(
+    @CurrentUser() user: any,
+    @Query() pagination: PaginationDto,
+  ) {
+    return this.postsService.findAll(user.id, pagination);
   }
 
   @Post()

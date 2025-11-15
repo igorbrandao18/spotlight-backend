@@ -51,15 +51,18 @@ describe('PostsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return list of posts', async () => {
+    it('should return paginated list of posts', async () => {
       const user = await TestHelpers.createUser();
       await TestHelpers.createPost(user.id);
       await TestHelpers.createPost(user.id);
 
-      const result = await service.findAll({});
+      const result = await service.findAll(user.id, { page: 1, limit: 20 });
 
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThanOrEqual(2);
+      expect(result).toHaveProperty('content');
+      expect(result).toHaveProperty('page');
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.content.length).toBeGreaterThanOrEqual(2);
+      expect(result.page.totalElements).toBeGreaterThanOrEqual(2);
     });
   });
 

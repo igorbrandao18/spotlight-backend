@@ -52,15 +52,18 @@ describe('ProjectsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return list of projects', async () => {
+    it('should return paginated list of projects', async () => {
       const user = await TestHelpers.createUser();
       await TestHelpers.createProject(user.id);
       await TestHelpers.createProject(user.id);
 
-      const result = await service.findAll(user.id, {});
+      const result = await service.findAll(user.id, false);
 
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThanOrEqual(2);
+      expect(result).toHaveProperty('content');
+      expect(result).toHaveProperty('page');
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.content.length).toBeGreaterThanOrEqual(2);
+      expect(result.page.totalElements).toBeGreaterThanOrEqual(2);
     });
   });
 
@@ -69,16 +72,14 @@ describe('ProjectsService', () => {
       const user = await TestHelpers.createUser();
       const project = await TestHelpers.createProject(user.id);
 
-      const result = await service.findOne(user.id, project.id);
+      const result = await service.findOne(project.id);
 
       expect(result).toBeDefined();
       expect(result.id).toBe(project.id);
     });
 
     it('should throw NotFoundException if project not found', async () => {
-      const user = await TestHelpers.createUser();
-
-      await expect(service.findOne(user.id, 'invalid-id')).rejects.toThrow(
+      await expect(service.findOne('invalid-id')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -93,7 +94,7 @@ describe('ProjectsService', () => {
         title: 'Updated title',
       };
 
-      const result = await service.update(user.id, project.id, updateDto);
+      const result = await service.update(project.id, user.id, updateDto);
 
       expect(result.title).toBe(updateDto.title);
 
@@ -109,7 +110,7 @@ describe('ProjectsService', () => {
       const project = await TestHelpers.createProject(owner.id);
 
       await expect(
-        service.update(otherUser.id, project.id, { title: 'test' }),
+        service.update(project.id, otherUser.id, { title: 'test' }),
       ).rejects.toThrow('ForbiddenException');
     });
   });
@@ -126,19 +127,17 @@ describe('ProjectsService', () => {
       };
 
       const result = await service.addMember(
-        owner.id,
         project.id,
+        owner.id,
         addMemberDto,
       );
 
       expect(result).toHaveProperty('userId', member.id);
 
-      const projectMember = await prisma.projectMember.findUnique({
+      const projectMember = await prisma.projectMember.findFirst({
         where: {
-          userId_projectId: {
-            userId: member.id,
-            projectId: project.id,
-          },
+          userId: member.id,
+          projectId: project.id,
         },
       });
       expect(projectMember).toBeDefined();
@@ -157,8 +156,8 @@ describe('ProjectsService', () => {
       };
 
       const result = await service.createMilestone(
-        owner.id,
         project.id,
+        owner.id,
         milestoneDto,
       );
 

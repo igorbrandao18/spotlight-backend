@@ -8,51 +8,77 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePortfolioItemDto } from './dto/create-portfolio-item.dto';
 import { UpdatePortfolioItemDto } from './dto/update-portfolio-item.dto';
 import { CreatePortfolioCommentDto } from './dto/create-comment.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 
 @Injectable()
 export class PortfolioService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(userId?: string) {
-    const where = userId ? { userId } : {};
-    const items = await this.prisma.portfolioItem.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-        media: true,
-        _count: {
-          select: {
-            likes: true,
-            comments: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+  async findAll(
+    userId?: string,
+    pagination: PaginationDto = { page: 1, limit: 20 },
+  ): Promise<PaginatedResponse<any>> {
+    const { page = 1, limit = 20 } = pagination;
+    const skip = (page - 1) * limit;
 
-    return items.map((item) => ({
-      id: item.id,
-      title: item.title,
-      description: item.description,
-      createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString(),
-      likeCount: item.likeCount,
-      viewCount: item.viewCount,
-      media: item.media.map((m) => ({
-        id: m.id,
-        url: m.url,
-        type: m.type,
-        createdAt: m.createdAt.toISOString(),
+    const where = userId ? { userId } : {};
+
+    const [items, total] = await Promise.all([
+      this.prisma.portfolioItem.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          media: true,
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.portfolioItem.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      content: items.map((item) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString(),
+        likeCount: item.likeCount,
+        viewCount: item.viewCount,
+        media: item.media.map((m) => ({
+          id: m.id,
+          url: m.url,
+          type: m.type,
+          createdAt: m.createdAt.toISOString(),
+        })),
       })),
-    }));
+      page: {
+        size: limit,
+        number: page,
+        totalElements: total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
 
   async findOne(id: string) {

@@ -34,6 +34,7 @@ import { CreateMilestoneDto } from './dto/create-milestone.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../common/interfaces/user.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('projects')
 @ApiBearerAuth('JWT-auth')
@@ -43,13 +44,22 @@ export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
   @Get('list')
+  @ApiQuery({ name: 'projectId', required: false, type: String })
+  @ApiQuery({ name: 'archived', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   async findAll(
     @Query('projectId') projectId?: string,
     @Query('archived') archived?: string,
+    @Query() pagination: PaginationDto,
     @CurrentUser() user?: CurrentUserPayload,
   ) {
     const isArchived = archived === 'true';
-    return this.projectsService.findAll(projectId || user?.id, isArchived);
+    return this.projectsService.findAll(
+      projectId || user?.id,
+      isArchived,
+      pagination,
+    );
   }
 
   @Get('list/colaboration')

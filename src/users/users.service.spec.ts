@@ -65,15 +65,18 @@ describe('UsersService', () => {
     });
   });
 
-  describe('findAll', () => {
-    it('should return list of users', async () => {
+  describe('searchUsers', () => {
+    it('should return paginated list of users', async () => {
       await TestHelpers.createUser({ name: 'User 1' });
       await TestHelpers.createUser({ name: 'User 2' });
 
-      const result = await service.findAll({});
+      const result = await service.searchUsers('', { page: 1, limit: 20 });
 
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThanOrEqual(2);
+      expect(result).toHaveProperty('content');
+      expect(result).toHaveProperty('page');
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.content.length).toBeGreaterThanOrEqual(2);
+      expect(result.page.totalElements).toBeGreaterThanOrEqual(2);
     });
 
     it('should filter users by search term', async () => {
@@ -86,9 +89,9 @@ describe('UsersService', () => {
         email: 'jane@example.com',
       });
 
-      const result = await service.findAll({ search: 'John' });
+      const result = await service.searchUsers('John', { page: 1, limit: 20 });
 
-      expect(result.some((u) => u.name.includes('John'))).toBe(true);
+      expect(result.content.some((u) => u.name.includes('John'))).toBe(true);
     });
   });
 

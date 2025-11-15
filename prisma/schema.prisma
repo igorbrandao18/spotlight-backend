@@ -79,6 +79,9 @@ model User {
   @@index([enabled]) // For filtering active users
   @@index([createdAt]) // For sorting by registration date
   @@index([email]) // Additional index for email lookups (already unique, but helps with joins)
+  @@index([name, email]) // Composite index for search queries
+  @@index([enabled, createdAt]) // For filtering active users by date
+  @@index([areaActivity]) // For filtering by activity area
   @@map("users")
 }
 
@@ -281,6 +284,8 @@ model Project {
   @@index([ownerId, createdAt(sort: Desc)]) // For user's projects (most recent first)
   @@index([status]) // For filtering by status
   @@index([archived]) // For filtering archived projects
+  @@index([ownerId, status]) // For user's active projects
+  @@index([status, archived]) // Composite for filtering
   @@map("projects")
 }
 

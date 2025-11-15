@@ -9,12 +9,21 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { CreateMilestoneDto } from './dto/create-milestone.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 
 @Injectable()
 export class ProjectsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(userId?: string, archived?: boolean) {
+  async findAll(
+    userId?: string,
+    archived?: boolean,
+    pagination: PaginationDto = { page: 1, limit: 20 },
+  ): Promise<PaginatedResponse<any>> {
+    const { page = 1, limit = 20 } = pagination;
+    const skip = (page - 1) * limit;
+
     const where: any = {};
 
     if (userId) {
@@ -27,45 +36,62 @@ export class ProjectsService {
       where.archived = false;
     }
 
-    const projects = await this.prisma.project.findMany({
-      where,
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
+    const [projects, total] = await Promise.all([
+      this.prisma.project.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
           },
-        },
-        members: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: true,
+                },
               },
             },
           },
-        },
-        milestones: {
-          orderBy: {
-            createdAt: 'asc',
+          milestones: {
+            orderBy: {
+              createdAt: 'asc',
+            },
+          },
+          _count: {
+            select: {
+              members: true,
+              milestones: true,
+            },
           },
         },
-        _count: {
-          select: {
-            members: true,
-            milestones: true,
-          },
+        orderBy: {
+          createdAt: 'desc',
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+      }),
+      this.prisma.project.count({ where }),
+    ]);
 
-    return projects;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      content: projects,
+      page: {
+        size: limit,
+        number: page,
+        totalElements: total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
 
   async findOne(id: string, archived?: boolean) {

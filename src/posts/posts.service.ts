@@ -9,33 +9,45 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateReactionDto } from './dto/create-reaction.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 
 @Injectable()
 export class PostsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(userId?: string) {
-    const posts = await this.prisma.post.findMany({
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
+  async findAll(
+    userId?: string,
+    pagination: PaginationDto = { page: 1, limit: 20 },
+  ): Promise<PaginatedResponse<any>> {
+    const { page = 1, limit = 20 } = pagination;
+    const skip = (page - 1) * limit;
+
+    const [posts, total] = await Promise.all([
+      this.prisma.post.findMany({
+        skip,
+        take: limit,
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          _count: {
+            select: {
+              comments: true,
+              reactions: true,
+            },
           },
         },
-        _count: {
-          select: {
-            comments: true,
-            reactions: true,
-          },
+        orderBy: {
+          createdAt: 'desc',
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 50,
-    });
+      }),
+      this.prisma.post.count(),
+    ]);
 
     // Get user reactions for each post
     let userReactions: Record<string, string> = {};
@@ -55,22 +67,34 @@ export class PostsService {
       );
     }
 
-    return posts.map((post) => ({
-      id: post.id,
-      content: post.content,
-      description: post.description,
-      equipment: post.equipment,
-      location: post.location,
-      software: post.software,
-      image: post.image,
-      authorId: post.authorId,
-      author: post.author,
-      createdAt: post.createdAt,
-      updatedAt: post.updatedAt,
-      commentsCount: post._count.comments,
-      reactionsCount: post._count.reactions,
-      userReaction: userReactions[post.id] || null,
-    }));
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      content: posts.map((post) => ({
+        id: post.id,
+        content: post.content,
+        description: post.description,
+        equipment: post.equipment,
+        location: post.location,
+        software: post.software,
+        image: post.image,
+        authorId: post.authorId,
+        author: post.author,
+        createdAt: post.createdAt,
+        updatedAt: post.updatedAt,
+        commentsCount: post._count.comments,
+        reactionsCount: post._count.reactions,
+        userReaction: userReactions[post.id] || null,
+      })),
+      page: {
+        size: limit,
+        number: page,
+        totalElements: total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    };
   }
 
   async findOne(id: string, userId?: string) {

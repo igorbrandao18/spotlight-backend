@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 
 @Injectable()
 export class UsersService {
@@ -48,7 +50,14 @@ export class UsersService {
     };
   }
 
-  async searchUsers(search: string, currentUserId?: string) {
+  async searchUsers(
+    search: string,
+    pagination: PaginationDto = { page: 1, limit: 20 },
+    currentUserId?: string,
+  ): Promise<PaginatedResponse<any>> {
+    const { page = 1, limit = 20 } = pagination;
+    const skip = (page - 1) * limit;
+
     const where = search
       ? {
           OR: [
@@ -63,42 +72,49 @@ export class UsersService {
         }
       : { enabled: true };
 
-    const users = await this.prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        areaActivity: true,
-        title: true,
-        location: true,
-        isPro: true,
-        isVerified: true,
-        avatar: true,
-        coverImage: true,
-        _count: {
-          select: {
-            followers: true,
-            following: true,
-            ownedProjects: true,
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          areaActivity: true,
+          title: true,
+          location: true,
+          isPro: true,
+          isVerified: true,
+          avatar: true,
+          coverImage: true,
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+              ownedProjects: true,
+            },
           },
+          bio: true,
+          shortBio: true,
+          specialties: true,
+          website: true,
+          socialLinks: true,
+          websites: true,
+          locations: true,
+          profileLevel: true,
+          resume: true,
+          chatAvailability: true,
+          industry: true,
+          timeOfExperience: true,
+          notableClients: true,
+          whatsappNumber: true,
         },
-        bio: true,
-        shortBio: true,
-        specialties: true,
-        website: true,
-        socialLinks: true,
-        websites: true,
-        locations: true,
-        profileLevel: true,
-        resume: true,
-        chatAvailability: true,
-        industry: true,
-        timeOfExperience: true,
-        notableClients: true,
-        whatsappNumber: true,
-      },
-      take: 20,
-    });
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     // Add follow status if currentUserId is provided
     if (currentUserId) {
@@ -127,21 +143,33 @@ export class UsersService {
           isBlocked: false, // TODO: Implement blocking
         })),
         page: {
-          size: 20,
-          number: 0,
-          totalElements: users.length,
-          totalPages: 1,
+          size: limit,
+          number: page,
+          totalElements: total,
+          totalPages,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
         },
       };
     }
 
     return {
-      content: users,
+      content: users.map((user) => ({
+        ...user,
+        metrics: {
+          followers: user._count.followers,
+          following: user._count.following,
+          projects: user._count.ownedProjects,
+          rating: 0, // TODO: Implement rating system
+        },
+      })),
       page: {
-        size: 20,
-        number: 0,
-        totalElements: users.length,
-        totalPages: 1,
+        size: limit,
+        number: page,
+        totalElements: total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
       },
     };
   }

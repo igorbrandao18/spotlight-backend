@@ -28,6 +28,7 @@ import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { CurrentUserPayload } from '../common/interfaces/user.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @ApiTags('users')
 @ApiBearerAuth('JWT-auth')
@@ -42,8 +43,15 @@ export class UsersController {
   }
 
   @Get()
-  async searchUsers(@Query('search') search: string, @CurrentUser() user: any) {
-    return this.usersService.searchUsers(search, user.id);
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async searchUsers(
+    @Query('search') search: string,
+    @Query() pagination: PaginationDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.usersService.searchUsers(search, pagination, user.id);
   }
 
   @Get(':id/public')
