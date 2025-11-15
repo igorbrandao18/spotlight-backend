@@ -161,28 +161,36 @@ export class ProjectsService {
       ? `/uploads/projects/${userId}-${Date.now()}.${file.originalname.split('.').pop()}`
       : null;
 
+    const createData: any = {
+      ...projectData,
+      image: imageUrl,
+      ownerId: userId,
+      status: projectData.status || 'TODO',
+    };
+
+    if (members && members.length > 0) {
+      createData.members = {
+        create: members.map((m) => ({
+          userId: m.userId,
+          role: m.role || 'MEMBER',
+        })),
+      };
+    }
+
+    if (milestones && milestones.length > 0) {
+      createData.milestones = {
+        create: milestones.map((m, index) => ({
+          title: m.title,
+          description: m.description,
+          dueDate: m.dueDate,
+          status: m.status || 'TODO',
+          order: m.order ?? index,
+        })),
+      };
+    }
+
     const project = await this.prisma.project.create({
-      data: {
-        ...projectData,
-        image: imageUrl,
-        ownerId: userId,
-        status: projectData.status || 'TODO',
-        members: {
-          create: members?.map((m) => ({
-            userId: m.userId,
-            role: m.role || 'MEMBER',
-          })) || [],
-        },
-        milestones: {
-          create: milestones?.map((m, index) => ({
-            title: m.title,
-            description: m.description,
-            dueDate: m.dueDate,
-            status: m.status || 'TODO',
-            order: m.order ?? index,
-          })) || [],
-        },
-      },
+      data: createData,
       include: {
         owner: {
           select: {

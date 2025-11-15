@@ -68,7 +68,7 @@ describe('PortfolioService', () => {
         },
       });
 
-      const result = await service.findAll({ userId: user.id });
+      const result = await service.findAll(user.id);
 
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThanOrEqual(2);
@@ -149,9 +149,9 @@ describe('PortfolioService', () => {
 
       const like = await prisma.portfolioLike.findUnique({
         where: {
-          userId_itemId: {
+          portfolioItemId_userId: {
+            portfolioItemId: item.id,
             userId: liker.id,
-            itemId: item.id,
           },
         },
       });

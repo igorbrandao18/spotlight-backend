@@ -66,7 +66,6 @@ export class TestHelpers {
         "posts",
         "follows",
         "refresh_tokens",
-        "password_reset_tokens",
         "users"
       CASCADE;`);
       
@@ -93,7 +92,6 @@ export class TestHelpers {
         await prisma.post.deleteMany();
         await prisma.follow.deleteMany();
         await prisma.refreshToken.deleteMany();
-        await prisma.passwordResetToken.deleteMany();
         await prisma.user.deleteMany();
       } catch (deleteError) {
         // Ignore errors during cleanup

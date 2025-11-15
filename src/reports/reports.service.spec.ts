@@ -66,7 +66,6 @@ describe('ReportsService', () => {
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
           category: 'USER',
-          description: 'Test report',
           status: 'PENDING',
         },
       });
@@ -96,7 +95,6 @@ describe('ReportsService', () => {
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
           category: 'USER',
-          description: 'Test report',
           status: 'PENDING',
         },
       });
@@ -126,7 +124,6 @@ describe('ReportsService', () => {
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
           category: 'USER',
-          description: 'Test report',
           status: 'PENDING',
         },
       });
