@@ -1,0 +1,126 @@
+name: Deploy to Production Server (Docker)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  SERVER_HOST: '134.209.174.77'
+  SERVER_USER: 'root'
+  SERVER_PASSWORD: '81927d75KZsaZZ12@1@L'
+  DEPLOY_PATH: '/var/www/spotlight-backend'
+  DOCKER_IMAGE_NAME: 'spotlight-backend'
+
+jobs:
+  deploy:
+    name: Deploy with Docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          script: |
+            set -e
+            
+            echo "🚀 Starting Docker deployment..."
+            
+            # Stop and remove all existing services
+            echo "⏹️  Stopping existing services..."
+            cd ${{ env.DEPLOY_PATH }} 2>/dev/null || true
+            docker-compose down -v 2>/dev/null || true
+            docker stop ${{ env.DOCKER_IMAGE_NAME }} 2>/dev/null || true
+            docker rm ${{ env.DOCKER_IMAGE_NAME }} 2>/dev/null || true
+            pm2 stop all 2>/dev/null || true
+            pm2 delete all 2>/dev/null || true
+            
+            # Remove old deployment directory
+            echo "🗑️  Removing old deployment..."
+            rm -rf ${{ env.DEPLOY_PATH }}
+            
+            # Create fresh deployment directory
+            echo "📁 Creating deployment directory..."
+            mkdir -p ${{ env.DEPLOY_PATH }}
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Install system dependencies if needed
+            echo "📥 Installing system dependencies..."
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            
+            # Install Docker if needed
+            if ! command -v docker &> /dev/null; then
+              echo "🐳 Installing Docker..."
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sh get-docker.sh
+              rm get-docker.sh
+            fi
+            
+            # Install Docker Compose if needed
+            if ! command -v docker-compose &> /dev/null; then
+              echo "🐳 Installing Docker Compose..."
+              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              chmod +x /usr/local/bin/docker-compose
+            fi
+            
+            # Clone repository
+            echo "📥 Cloning repository..."
+            git clone https://github.com/${{ github.repository }}.git . || {
+              echo "⚠️  Repository already exists, pulling latest changes..."
+              git pull origin main
+            }
+            
+            # Setup environment
+            echo "⚙️  Setting up environment..."
+            if [ ! -f .env ]; then
+              cp .env.example .env
+              echo "⚠️  Please configure .env file with your production settings"
+            fi
+            
+            # Build and start with Docker Compose
+            echo "🐳 Building and starting containers..."
+            docker-compose -f docker-compose.prod.yml build --no-cache
+            docker-compose -f docker-compose.prod.yml up -d
+            
+            # Wait for services to be healthy
+            echo "⏳ Waiting for services to be healthy..."
+            sleep 15
+            
+            # Show status
+            echo "📊 Container status:"
+            docker-compose -f docker-compose.prod.yml ps
+            
+            echo "📋 Recent logs:"
+            docker-compose -f docker-compose.prod.yml logs --tail=50
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          script: |
+            sleep 10
+            echo "🔍 Verifying deployment..."
+            
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Check container status
+            echo "📊 Container status:"
+            docker-compose -f docker-compose.prod.yml ps
+            
+            # Check if application is responding
+            echo "🌐 Testing API endpoint..."
+            curl -f http://localhost:8080/api/docs && echo "✅ API is responding" || echo "⚠️  API health check failed"
+            
+            # Show recent logs
+            echo "📋 Recent logs:"
+            docker-compose -f docker-compose.prod.yml logs --tail=20
+

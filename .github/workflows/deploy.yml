@@ -1,0 +1,175 @@
+name: Deploy to Production Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  SERVER_HOST: '134.209.174.77'
+  SERVER_USER: 'root'
+  SERVER_PASSWORD: '81927d75KZsaZZ12@1@L'
+  DEPLOY_PATH: '/var/www/spotlight-backend'
+  PORT: '8080'
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          script: |
+            set -e
+            
+            echo "🚀 Starting deployment..."
+            
+            # Stop and remove all existing services
+            echo "⏹️  Stopping existing services..."
+            cd ${{ env.DEPLOY_PATH }} 2>/dev/null || true
+            docker-compose down -v 2>/dev/null || true
+            pm2 stop all 2>/dev/null || true
+            pm2 delete all 2>/dev/null || true
+            pkill -f "node.*dist/main" 2>/dev/null || true
+            pkill -f "nest start" 2>/dev/null || true
+            
+            # Remove old deployment directory
+            echo "🗑️  Removing old deployment..."
+            rm -rf ${{ env.DEPLOY_PATH }}
+            
+            # Create fresh deployment directory
+            echo "📁 Creating deployment directory..."
+            mkdir -p ${{ env.DEPLOY_PATH }}
+            cd ${{ env.DEPLOY_PATH }}
+            
+            # Install system dependencies if needed
+            echo "📥 Installing system dependencies..."
+            export DEBIAN_FRONTEND=noninteractive
+            
+            # Update package list
+            apt-get update -qq
+            
+            # Install Node.js if needed
+            if ! command -v node &> /dev/null; then
+              echo "📦 Installing Node.js..."
+              curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+              apt-get install -y nodejs
+            fi
+            
+            # Install pnpm if needed
+            if ! command -v pnpm &> /dev/null; then
+              echo "📦 Installing pnpm..."
+              curl -fsSL https://get.pnpm.io/install.sh | sh -
+              export PNPM_HOME="$HOME/.local/share/pnpm"
+              export PATH="$PNPM_HOME:$PATH"
+            else
+              export PNPM_HOME="$HOME/.local/share/pnpm"
+              export PATH="$PNPM_HOME:$PATH"
+            fi
+            
+            # Install Docker if needed
+            if ! command -v docker &> /dev/null; then
+              echo "🐳 Installing Docker..."
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sh get-docker.sh
+              rm get-docker.sh
+            fi
+            
+            # Install Docker Compose if needed
+            if ! command -v docker-compose &> /dev/null; then
+              echo "🐳 Installing Docker Compose..."
+              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              chmod +x /usr/local/bin/docker-compose
+            fi
+            
+            # Install PM2 if needed
+            if ! command -v pm2 &> /dev/null; then
+              echo "📦 Installing PM2..."
+              npm install -g pm2
+            fi
+            
+            # Clone repository
+            echo "📥 Cloning repository..."
+            git clone https://github.com/${{ github.repository }}.git . || {
+              echo "⚠️  Repository already exists, pulling latest changes..."
+              git pull origin main
+            }
+            
+            # Setup environment
+            echo "⚙️  Setting up environment..."
+            if [ ! -f .env ]; then
+              cp .env.example .env
+              echo "⚠️  Please configure .env file with your production settings"
+            fi
+            
+            # Install dependencies
+            echo "📦 Installing dependencies..."
+            pnpm install --frozen-lockfile
+            
+            # Generate Prisma Client
+            echo "🔧 Generating Prisma Client..."
+            pnpm prisma generate
+            
+            # Run database migrations
+            echo "🗄️  Running database migrations..."
+            pnpm prisma migrate deploy || echo "⚠️  Migration failed, check database connection"
+            
+            # Build application
+            echo "🔨 Building application..."
+            NODE_ENV=production pnpm run build
+            
+            # Start application with PM2
+            echo "🚀 Starting application..."
+            pm2 start dist/main.js \
+              --name spotlight-backend \
+              --instances 1 \
+              --exec-mode fork \
+              --env production \
+              --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
+              --merge-logs \
+              --max-memory-restart 500M
+            
+            pm2 save
+            pm2 startup systemd -u ${{ env.SERVER_USER }} --hp /root || true
+            
+            echo "✅ Deployment completed successfully!"
+            echo "📊 Application status:"
+            pm2 status
+            
+            # Show logs
+            echo "📋 Recent logs:"
+            pm2 logs spotlight-backend --lines 20 --nostream
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          script: |
+            sleep 10
+            echo "🔍 Verifying deployment..."
+            
+            # Check PM2 status
+            pm2 status
+            
+            # Check if application is responding
+            echo "🌐 Testing API endpoint..."
+            curl -f http://localhost:${{ env.PORT }}/api/docs && echo "✅ API is responding" || echo "⚠️  API health check failed"
+            
+            # Check process
+            echo "🔍 Checking process..."
+            ps aux | grep "node.*dist/main" | grep -v grep || echo "⚠️  Process not found"
+
