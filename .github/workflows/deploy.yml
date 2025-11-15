@@ -69,14 +69,28 @@ jobs:
             cd ${{ env.DEPLOY_PATH }}
             docker compose down 2>/dev/null || true
             
-            # Stop all containers that might be using port 8080
-            echo "Stopping containers on port 8080..."
+            # Stop all containers that might be using ports we need
+            echo "Stopping containers on ports 8080, 9000, 9001, 1025, 1080..."
             docker stop $(docker ps -q --filter "publish=8080") 2>/dev/null || true
+            docker stop $(docker ps -q --filter "publish=9000") 2>/dev/null || true
+            docker stop $(docker ps -q --filter "publish=9001") 2>/dev/null || true
+            docker stop $(docker ps -q --filter "publish=1025") 2>/dev/null || true
+            docker stop $(docker ps -q --filter "publish=1080") 2>/dev/null || true
+            
+            # Remove stopped containers
             docker rm $(docker ps -aq --filter "publish=8080") 2>/dev/null || true
+            docker rm $(docker ps -aq --filter "publish=9000") 2>/dev/null || true
+            docker rm $(docker ps -aq --filter "publish=9001") 2>/dev/null || true
+            docker rm $(docker ps -aq --filter "publish=1025") 2>/dev/null || true
+            docker rm $(docker ps -aq --filter "publish=1080") 2>/dev/null || true
             
             # Stop spotlight containers by name pattern
             docker stop $(docker ps -q --filter "name=spotlight") 2>/dev/null || true
             docker rm $(docker ps -aq --filter "name=spotlight") 2>/dev/null || true
+            
+            # Stop old containers by name pattern (minio_prod, maildev_prod, etc)
+            docker stop minio_prod maildev_prod postgres_db_spotlight_prod spotlight_api_prod 2>/dev/null || true
+            docker rm minio_prod maildev_prod postgres_db_spotlight_prod spotlight_api_prod 2>/dev/null || true
             
             echo "✅ All containers stopped"
 
