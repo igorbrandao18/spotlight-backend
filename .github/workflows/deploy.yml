@@ -147,7 +147,22 @@ jobs:
             docker compose logs --tail=20
             
             echo ""
-            echo "🌐 Testing API endpoint..."
+            echo "🌐 Testing API endpoints..."
             sleep 5
-            curl -f http://localhost:8080/api/docs && echo "✅ API is responding" || echo "⚠️  API health check failed"
+            
+            echo "  - Local API (port 8080):"
+            curl -f http://localhost:8080/api/docs && echo "    ✅ Local API is responding" || echo "    ⚠️  Local API health check failed"
+            
+            echo ""
+            echo "  - HTTPS API (via domain):"
+            curl -f https://spotlight.brandaodeveloper.com.br/api/docs && echo "    ✅ HTTPS API is responding" || echo "    ⚠️  HTTPS API health check failed"
+            
+            echo ""
+            echo "  - HTTP -> HTTPS redirect:"
+            HTTP_CODE=$(curl -sI http://spotlight.brandaodeveloper.com.br/api/docs | grep -i "HTTP" | awk '{print $2}' | tr -d '\r')
+            if [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
+              echo "    ✅ HTTP redirects to HTTPS (HTTP $HTTP_CODE)"
+            else
+              echo "    ⚠️  HTTP redirect check failed (HTTP $HTTP_CODE)"
+            fi
 
