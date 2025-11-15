@@ -8,11 +8,12 @@ export class TestHelpers {
     const hashedPassword = await bcrypt.hash('password123', 10);
     return prisma.user.create({
       data: {
-        email: `test${Date.now()}@example.com`,
+        email: overrides.email || `test${Date.now()}@example.com`,
         name: 'Test User',
         password: hashedPassword,
         areaActivity: 'Photography',
         ...overrides,
+        password: overrides.password ? await bcrypt.hash(overrides.password as string, 10) : hashedPassword,
       },
     });
   }
@@ -40,14 +41,19 @@ export class TestHelpers {
 
   static async cleanup() {
     // Delete in correct order to respect foreign keys
-    await prisma.postReaction.deleteMany();
-    await prisma.postComment.deleteMany();
-    await prisma.post.deleteMany();
-    await prisma.projectMilestone.deleteMany();
-    await prisma.projectMember.deleteMany();
-    await prisma.project.deleteMany();
-    await prisma.refreshToken.deleteMany();
-    await prisma.user.deleteMany();
+    const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
+      SELECT tablename FROM pg_tables WHERE schemaname='public'
+    `;
+
+    for (const { tablename } of tablenames) {
+      if (tablename !== '_prisma_migrations') {
+        try {
+          await prisma.$executeRawUnsafe(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
+        } catch (error) {
+          console.log({ error });
+        }
+      }
+    }
   }
 
   static async getAuthToken(email: string, password: string, app: any): Promise<string> {
