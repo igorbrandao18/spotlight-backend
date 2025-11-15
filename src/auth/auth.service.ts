@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { PasswordService } from '../common/services/password.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
@@ -32,6 +33,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   /**
@@ -57,8 +59,8 @@ export class AuthService {
       });
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+    // Hash password using Argon2
+    const hashedPassword = await this.passwordService.hash(registerDto.password);
 
     // Create user in transaction
     const user = await this.prisma.$transaction(async (tx) => {
@@ -163,7 +165,8 @@ export class AuthService {
       });
     }
 
-    const isPasswordValid = await bcrypt.compare(
+    // Verify password (supports both Argon2 and legacy BCrypt)
+    const isPasswordValid = await this.verifyPassword(
       loginDto.password,
       user.password,
     );
@@ -173,6 +176,16 @@ export class AuthService {
       throw new UnauthorizedException({
         code: 'INVALID_CREDENTIALS',
         message: 'Invalid email or password',
+      });
+    }
+
+    // Migrate password to Argon2 if it's still using BCrypt
+    if (user.password.startsWith('$2')) {
+      this.logger.log(`Migrating password to Argon2 for user: ${user.id}`);
+      const newHash = await this.passwordService.hash(loginDto.password);
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { password: newHash },
       });
     }
 
@@ -368,7 +381,8 @@ export class AuthService {
       });
     }
 
-    const isCurrentPasswordValid = await bcrypt.compare(
+    // Verify current password (supports both Argon2 and legacy BCrypt)
+    const isCurrentPasswordValid = await this.verifyPassword(
       updatePasswordDto.currentPassword,
       user.password,
     );
@@ -381,7 +395,8 @@ export class AuthService {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(updatePasswordDto.newPassword, 10);
+    // Hash new password using Argon2
+    const hashedPassword = await this.passwordService.hash(updatePasswordDto.newPassword);
 
     await this.prisma.user.update({
       where: { id: userId },
@@ -503,6 +518,30 @@ export class AuthService {
           : undefined,
       },
     };
+  }
+
+  /**
+   * Verify password supporting both Argon2 and legacy BCrypt
+   * This allows gradual migration from BCrypt to Argon2
+   * 
+   * @param password Plain text password
+   * @param hash Stored password hash (Argon2 or BCrypt)
+   * @returns True if password matches
+   */
+  private async verifyPassword(
+    password: string,
+    hash: string,
+  ): Promise<boolean> {
+    // Check if hash is BCrypt (starts with $2)
+    if (hash.startsWith('$2')) {
+      // Legacy BCrypt hash
+      this.logger.debug('Verifying password with BCrypt (legacy)');
+      return bcrypt.compare(password, hash);
+    }
+
+    // Argon2 hash (starts with $argon2id$ or $argon2i$ or $argon2d$)
+    this.logger.debug('Verifying password with Argon2');
+    return this.passwordService.verify(hash, password);
   }
 
   /**

@@ -1,13 +1,32 @@
 import { PrismaClient } from '@prisma/client';
+import * as argon2 from 'argon2';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 export class TestHelpers {
+  /**
+   * Create a test user with Argon2 hashed password by default
+   * Can optionally create with BCrypt hash for testing migration scenarios
+   */
   static async createUser(overrides: Partial<any> = {}) {
     // Default password meets new requirements: min 8 chars, uppercase, lowercase, number
     const defaultPassword = 'SecurePass123';
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+    const passwordToHash = (overrides.password as string) || defaultPassword;
+    
+    // Use Argon2 by default, but allow BCrypt for migration tests
+    const useBcrypt = overrides._useBcrypt === true;
+    delete overrides._useBcrypt; // Remove internal flag
+    
+    const hashedPassword = useBcrypt
+      ? await bcrypt.hash(passwordToHash, 10)
+      : await argon2.hash(passwordToHash, {
+          type: argon2.argon2id,
+          memoryCost: 65536,
+          timeCost: 3,
+          parallelism: 4,
+        });
+    
     return prisma.user.create({
       data: {
         email: overrides.email || `test${Date.now()}@example.com`,
@@ -15,9 +34,7 @@ export class TestHelpers {
         password: hashedPassword,
         areaActivity: 'Photography',
         ...overrides,
-        password: overrides.password
-          ? await bcrypt.hash(overrides.password as string, 10)
-          : hashedPassword,
+        password: hashedPassword,
       },
     });
   }

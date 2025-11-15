@@ -55,7 +55,8 @@ alwaysApply: true
 ### Authentication & Security
 - **JWT**: @nestjs/jwt for token management
 - **Passport**: @nestjs/passport for authentication strategies
-- **BCrypt**: Password hashing
+- **Argon2**: Password hashing (Argon2id variant) - Industry standard, more secure than BCrypt
+- **BCrypt**: Legacy support for gradual migration (deprecated, will be removed)
 - **CORS**: Configured for frontend origin
 
 ### Communication
@@ -180,7 +181,8 @@ auth/
 ### Rules
 
 - ✅ Use `@Public()` decorator for public endpoints
-- ✅ Hash passwords with bcrypt (10 rounds)
+- ✅ Hash passwords with Argon2id (memory: 64MB, time: 3, parallelism: 4)
+- ✅ Legacy BCrypt support for gradual migration (auto-migrates on login)
 - ✅ Generate refresh tokens with UUID
 - ✅ Store refresh tokens in database with expiration
 - ✅ Validate email uniqueness on register
@@ -597,7 +599,8 @@ users/
 ### Data Protection
 
 - ✅ Never expose passwords in responses
-- ✅ Hash passwords with bcrypt (10 rounds)
+- ✅ Hash passwords with Argon2id (memory: 64MB, time: 3, parallelism: 4)
+- ✅ Legacy BCrypt support for gradual migration (auto-migrates on login)
 - ✅ Validate and sanitize all user inputs
 - ✅ Use DTOs for all request/response data
 - ✅ Implement rate limiting (TODO)

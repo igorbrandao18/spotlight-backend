@@ -8,12 +8,15 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
+import { PasswordService } from '../common/services/password.service';
+import * as argon2 from 'argon2';
 import * as bcrypt from 'bcrypt';
 import type { AuthenticationResponse } from './interfaces/auth-response.interface';
 
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: PrismaService;
+  let passwordService: PasswordService;
   let module: TestingModule;
 
   beforeAll(async () => {
@@ -23,6 +26,7 @@ describe('AuthService', () => {
 
     service = module.get<AuthService>(AuthService);
     prisma = module.get<PrismaService>(PrismaService);
+    passwordService = module.get<PasswordService>(PasswordService);
   });
 
   afterAll(async () => {
@@ -116,7 +120,7 @@ describe('AuthService', () => {
       }
     });
 
-    it('should hash password before storing', async () => {
+    it('should hash password with Argon2 before storing', async () => {
       const registerDto = {
         name: 'Test User',
         email: `test${Date.now()}@example.com`,
@@ -132,11 +136,16 @@ describe('AuthService', () => {
 
       expect(user).toBeDefined();
       expect(user.password).not.toBe(registerDto.password);
-      const isPasswordHashed = await bcrypt.compare(
-        registerDto.password,
+      
+      // Verify password is hashed with Argon2 (starts with $argon2id$)
+      expect(user.password).toMatch(/^\$argon2id\$/);
+      
+      // Verify password can be verified
+      const isPasswordValid = await passwordService.verify(
         user.password,
+        registerDto.password,
       );
-      expect(isPasswordHashed).toBe(true);
+      expect(isPasswordValid).toBe(true);
     });
 
     it('should normalize email to lowercase', async () => {
@@ -193,6 +202,40 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('account');
       expect(result).toHaveProperty('session');
       expect(result.session.ipAddress).toBe('192.168.1.2');
+    });
+
+    it('should migrate BCrypt password to Argon2 on login', async () => {
+      const email = `migrate${Date.now()}@example.com`;
+      const password = 'SecurePass123';
+      
+      // Create user with BCrypt hash (legacy)
+      const user = await TestHelpers.createUser({ 
+        email, 
+        password,
+        _useBcrypt: true, // Use BCrypt for this test
+      });
+      
+      // Verify password is BCrypt
+      expect(user.password).toMatch(/^\$2/);
+      
+      // Login should migrate password to Argon2
+      const loginDto = { email, password };
+      await service.login(loginDto);
+      
+      // Verify password was migrated to Argon2
+      const updatedUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { password: true },
+      });
+      
+      expect(updatedUser.password).toMatch(/^\$argon2id\$/);
+      
+      // Verify migrated password still works
+      const isValid = await passwordService.verify(
+        updatedUser.password,
+        password,
+      );
+      expect(isValid).toBe(true);
     });
 
     it('should detect first login correctly', async () => {
@@ -454,9 +497,12 @@ describe('AuthService', () => {
         select: { password: true },
       });
 
-      const isNewPasswordValid = await bcrypt.compare(
-        'NewSecurePass123',
+      // Verify new password is hashed with Argon2
+      expect(updatedUser.password).toMatch(/^\$argon2id\$/);
+      
+      const isNewPasswordValid = await passwordService.verify(
         updatedUser.password,
+        'NewSecurePass123',
       );
       expect(isNewPasswordValid).toBe(true);
 
