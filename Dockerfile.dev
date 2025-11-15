@@ -9,8 +9,11 @@ RUN apk add --no-cache openssl curl wget
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev)
-RUN npm install
+    # Install pnpm
+    RUN corepack enable && corepack prepare pnpm@latest --activate
+    
+    # Install all dependencies (including dev)
+    RUN pnpm install
 
 # Copy Prisma schema
 COPY prisma ./prisma/

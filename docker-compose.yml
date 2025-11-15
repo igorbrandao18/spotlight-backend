@@ -149,13 +149,13 @@ services:
     command: >
       sh -c "
       echo 'Installing dependencies...' &&
-      npm install &&
+      pnpm install &&
       echo 'Generating Prisma Client...' &&
-      npx prisma generate &&
+      pnpm prisma generate &&
       echo 'Running migrations...' &&
-      npx prisma migrate deploy &&
+      pnpm prisma migrate deploy &&
       echo 'Starting application...' &&
-      npm run start:dev
+      pnpm run start:dev
       "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api"]
