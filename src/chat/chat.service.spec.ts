@@ -35,7 +35,7 @@ describe('ChatService', () => {
 
       const room = await prisma.chatRoom.create({
         data: {
-          type: 'ONE_ON_ONE',
+          isGroup: false,
           members: {
             create: [
               { userId: user1.id },
@@ -59,7 +59,7 @@ describe('ChatService', () => {
 
       const room = await prisma.chatRoom.create({
         data: {
-          type: 'ONE_ON_ONE',
+          isGroup: false,
           members: {
             create: [
               { userId: user1.id },
@@ -90,7 +90,7 @@ describe('ChatService', () => {
       const result = await service.findOrCreateOneOnOneRoom(user1.id, user2.id);
 
       expect(result).toBeDefined();
-      expect(result.type).toBe('ONE_ON_ONE');
+      expect(result.isGroup).toBe(false);
 
       const room = await prisma.chatRoom.findUnique({
         where: { id: result.id },
@@ -120,7 +120,7 @@ describe('ChatService', () => {
 
       const room = await prisma.chatRoom.create({
         data: {
-          type: 'ONE_ON_ONE',
+          isGroup: false,
           members: {
             create: [
               { userId: user1.id },
@@ -150,7 +150,7 @@ describe('ChatService', () => {
 
       const room = await prisma.chatRoom.create({
         data: {
-          type: 'ONE_ON_ONE',
+          isGroup: false,
           members: {
             create: [
               { userId: user1.id },

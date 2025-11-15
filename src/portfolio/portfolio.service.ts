@@ -55,7 +55,7 @@ export class PortfolioService {
     }));
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const item = await this.prisma.portfolioItem.findUnique({
       where: { id },
       include: {
@@ -135,7 +135,7 @@ export class PortfolioService {
     };
   }
 
-  async update(id: number, userId: string, updateDto: UpdatePortfolioItemDto, files?: Express.Multer.File[]) {
+  async update(id: string, userId: string, updateDto: UpdatePortfolioItemDto, files?: Express.Multer.File[]) {
     const item = await this.prisma.portfolioItem.findUnique({
       where: { id },
     });
@@ -187,7 +187,7 @@ export class PortfolioService {
     };
   }
 
-  async remove(id: number, userId: string) {
+  async remove(id: string, userId: string) {
     const item = await this.prisma.portfolioItem.findUnique({
       where: { id },
     });
@@ -205,7 +205,7 @@ export class PortfolioService {
     });
   }
 
-  async like(id: number, userId: string) {
+  async like(id: string, userId: string) {
     const item = await this.prisma.portfolioItem.findUnique({
       where: { id },
     });
@@ -240,7 +240,7 @@ export class PortfolioService {
     });
   }
 
-  async unlike(id: number, userId: string) {
+  async unlike(id: string, userId: string) {
     const like = await this.prisma.portfolioLike.findUnique({
       where: {
         portfolioItemId_userId: {
@@ -267,7 +267,7 @@ export class PortfolioService {
     });
   }
 
-  async getLikes(id: number) {
+  async getLikes(id: string) {
     const likes = await this.prisma.portfolioLike.findMany({
       where: { portfolioItemId: id },
       include: {
@@ -290,7 +290,7 @@ export class PortfolioService {
     }));
   }
 
-  async view(id: number) {
+  async view(id: string) {
     await this.prisma.portfolioItem.update({
       where: { id },
       data: {
@@ -299,7 +299,7 @@ export class PortfolioService {
     });
   }
 
-  async getComments(itemId: number, page: number = 0, size: number = 10) {
+  async getComments(itemId: string, page: number = 0, size: number = 10) {
     const comments = await this.prisma.portfolioComment.findMany({
       where: {
         portfolioItemId: itemId,
@@ -368,7 +368,7 @@ export class PortfolioService {
     };
   }
 
-  async createComment(itemId: number, userId: string, createDto: CreatePortfolioCommentDto) {
+  async createComment(itemId: string, userId: string, createDto: CreatePortfolioCommentDto) {
     const item = await this.prisma.portfolioItem.findUnique({
       where: { id: itemId },
     });
@@ -379,7 +379,7 @@ export class PortfolioService {
 
     if (createDto.parentId) {
       const parent = await this.prisma.portfolioComment.findUnique({
-        where: { id: parseInt(createDto.parentId) },
+        where: { id: createDto.parentId },
       });
 
       if (!parent || parent.portfolioItemId !== itemId) {
@@ -392,7 +392,7 @@ export class PortfolioService {
         content: createDto.content,
         portfolioItemId: itemId,
         authorId: userId,
-        parentId: createDto.parentId ? parseInt(createDto.parentId) : null,
+        parentId: createDto.parentId || null,
       },
       include: {
         author: {
@@ -419,7 +419,7 @@ export class PortfolioService {
     };
   }
 
-  async updateComment(itemId: number, commentId: number, userId: string, content: string, parentId?: number) {
+  async updateComment(itemId: string, commentId: string, userId: string, content: string, parentId?: string) {
     const comment = await this.prisma.portfolioComment.findUnique({
       where: { id: commentId },
     });
@@ -436,12 +436,12 @@ export class PortfolioService {
       where: { id: commentId },
       data: {
         content,
-        parentId: parentId || undefined,
+        parentId: parentId || null,
       },
     });
   }
 
-  async deleteComment(itemId: number, commentId: number, userId: string) {
+  async deleteComment(itemId: string, commentId: string, userId: string) {
     const comment = await this.prisma.portfolioComment.findUnique({
       where: { id: commentId },
     });
@@ -459,12 +459,12 @@ export class PortfolioService {
     });
   }
 
-  async likeComment(itemId: number, commentId: number) {
+  async likeComment(itemId: string, commentId: string) {
     // TODO: Implement comment likes
     // This would require a PortfolioCommentLike table
   }
 
-  async unlikeComment(itemId: number, commentId: number) {
+  async unlikeComment(itemId: string, commentId: string) {
     // TODO: Implement comment unlikes
   }
 

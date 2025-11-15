@@ -35,7 +35,6 @@ describe('PortfolioService', () => {
       const createDto = {
         title: 'Portfolio Item',
         description: 'Test description',
-        category: 'PHOTOGRAPHY',
       };
 
       const result = await service.create(user.id, createDto);
@@ -59,7 +58,6 @@ describe('PortfolioService', () => {
         data: {
           title: 'Item 1',
           userId: user.id,
-          category: 'PHOTOGRAPHY',
         },
       });
 
@@ -67,7 +65,6 @@ describe('PortfolioService', () => {
         data: {
           title: 'Item 2',
           userId: user.id,
-          category: 'VIDEO',
         },
       });
 
@@ -85,7 +82,6 @@ describe('PortfolioService', () => {
         data: {
           title: 'Test Item',
           userId: user.id,
-          category: 'PHOTOGRAPHY',
         },
       });
 
@@ -107,7 +103,6 @@ describe('PortfolioService', () => {
         data: {
           title: 'Original Title',
           userId: user.id,
-          category: 'PHOTOGRAPHY',
         },
       });
 
@@ -132,7 +127,6 @@ describe('PortfolioService', () => {
         data: {
           title: 'Test Item',
           userId: owner.id,
-          category: 'PHOTOGRAPHY',
         },
       });
 
@@ -148,11 +142,10 @@ describe('PortfolioService', () => {
         data: {
           title: 'Test Item',
           userId: owner.id,
-          category: 'PHOTOGRAPHY',
         },
       });
 
-      await service.likeItem(liker.id, item.id);
+      await service.like(item.id, liker.id);
 
       const like = await prisma.portfolioLike.findUnique({
         where: {
@@ -175,7 +168,6 @@ describe('PortfolioService', () => {
         data: {
           title: 'Test Item',
           userId: owner.id,
-          category: 'PHOTOGRAPHY',
         },
       });
 
@@ -183,7 +175,7 @@ describe('PortfolioService', () => {
         content: 'This is a comment',
       };
 
-      const result = await service.createComment(commenter.id, item.id, commentDto);
+      const result = await service.createComment(item.id, commenter.id, commentDto);
 
       expect(result).toHaveProperty('id');
       expect(result.content).toBe(commentDto.content);

@@ -40,18 +40,63 @@ export class TestHelpers {
   }
 
   static async cleanup() {
-    // Delete in correct order to respect foreign keys
-    const tablenames = await prisma.$queryRaw<Array<{ tablename: string }>>`
-      SELECT tablename FROM pg_tables WHERE schemaname='public'
-    `;
-
-    for (const { tablename } of tablenames) {
-      if (tablename !== '_prisma_migrations') {
-        try {
-          await prisma.$executeRawUnsafe(`TRUNCATE TABLE "public"."${tablename}" CASCADE;`);
-        } catch (error) {
-          console.log({ error });
-        }
+    // Delete in correct order to respect foreign keys to avoid deadlocks
+    try {
+      // Disable triggers temporarily to avoid FK constraint issues
+      await prisma.$executeRawUnsafe(`SET session_replication_role = 'replica';`);
+      
+      // Delete in reverse dependency order
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE 
+        "reports", 
+        "portfolio_likes", 
+        "portfolio_comments", 
+        "portfolio_media", 
+        "portfolio_items",
+        "partner_store_equipment_images",
+        "partner_store_equipments",
+        "partner_stores",
+        "chat_messages",
+        "chat_room_members",
+        "chat_rooms",
+        "project_milestones",
+        "project_members",
+        "projects",
+        "post_reactions",
+        "post_comments",
+        "posts",
+        "follows",
+        "refresh_tokens",
+        "password_reset_tokens",
+        "users"
+      CASCADE;`);
+      
+      await prisma.$executeRawUnsafe(`SET session_replication_role = 'origin';`);
+    } catch (error) {
+      // If truncate fails, try individual deletes
+      try {
+        await prisma.report.deleteMany();
+        await prisma.portfolioLike.deleteMany();
+        await prisma.portfolioComment.deleteMany();
+        await prisma.portfolioMedia.deleteMany();
+        await prisma.portfolioItem.deleteMany();
+        await prisma.partnerStoreEquipmentImage.deleteMany();
+        await prisma.partnerStoreEquipment.deleteMany();
+        await prisma.partnerStore.deleteMany();
+        await prisma.chatMessage.deleteMany();
+        await prisma.chatRoomMember.deleteMany();
+        await prisma.chatRoom.deleteMany();
+        await prisma.projectMilestone.deleteMany();
+        await prisma.projectMember.deleteMany();
+        await prisma.project.deleteMany();
+        await prisma.postReaction.deleteMany();
+        await prisma.postComment.deleteMany();
+        await prisma.post.deleteMany();
+        await prisma.follow.deleteMany();
+        await prisma.refreshToken.deleteMany();
+        await prisma.passwordResetToken.deleteMany();
+        await prisma.user.deleteMany();
+      } catch (deleteError) {
+        // Ignore errors during cleanup
       }
     }
   }

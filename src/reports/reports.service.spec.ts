@@ -36,6 +36,7 @@ describe('ReportsService', () => {
       const createDto = {
         reportedUserId: reportedUser.id,
         reason: 'SPAM',
+        category: 'USER',
         description: 'This user is spamming',
       };
 
@@ -64,6 +65,7 @@ describe('ReportsService', () => {
           reporterId: reporter.id,
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
+          category: 'USER',
           description: 'Test report',
           status: 'PENDING',
         },
@@ -93,6 +95,7 @@ describe('ReportsService', () => {
           reporterId: reporter.id,
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
+          category: 'USER',
           description: 'Test report',
           status: 'PENDING',
         },
@@ -122,6 +125,7 @@ describe('ReportsService', () => {
           reporterId: reporter.id,
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
+          category: 'USER',
           description: 'Test report',
           status: 'PENDING',
         },

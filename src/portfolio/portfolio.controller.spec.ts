@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { PortfolioController } from './portfolio.controller';
 import { PortfolioService } from './portfolio.service';
 import { AppModule } from '../app.module';
@@ -58,7 +58,6 @@ describe('PortfolioController', () => {
         .send({
           title: 'Portfolio Item',
           description: 'Test description',
-          category: 'PHOTOGRAPHY',
         })
         .expect(201)
         .expect((res) => {
@@ -74,7 +73,6 @@ describe('PortfolioController', () => {
         data: {
           title: 'Item 1',
           userId,
-          category: 'PHOTOGRAPHY',
         },
       });
 
@@ -95,7 +93,6 @@ describe('PortfolioController', () => {
         data: {
           title: 'Test Item',
           userId,
-          category: 'PHOTOGRAPHY',
         },
       });
 
@@ -115,7 +112,6 @@ describe('PortfolioController', () => {
         data: {
           title: 'Test Item',
           userId,
-          category: 'PHOTOGRAPHY',
         },
       });
 
@@ -132,7 +128,6 @@ describe('PortfolioController', () => {
         data: {
           title: 'Test Item',
           userId,
-          category: 'PHOTOGRAPHY',
         },
       });
 

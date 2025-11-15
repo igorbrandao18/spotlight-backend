@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { ChatController } from './chat.controller';
 import { ChatService } from './chat.service';
 import { AppModule } from '../app.module';
@@ -56,7 +56,7 @@ describe('ChatController', () => {
 
       await prisma.chatRoom.create({
         data: {
-          type: 'ONE_ON_ONE',
+          isGroup: false,
           members: {
             create: [
               { userId },
@@ -82,7 +82,7 @@ describe('ChatController', () => {
 
       const room = await prisma.chatRoom.create({
         data: {
-          type: 'ONE_ON_ONE',
+          isGroup: false,
           members: {
             create: [
               { userId },
@@ -108,7 +108,7 @@ describe('ChatController', () => {
 
       const room = await prisma.chatRoom.create({
         data: {
-          type: 'ONE_ON_ONE',
+          isGroup: false,
           members: {
             create: [
               { userId },
@@ -146,7 +146,7 @@ describe('ChatController', () => {
         .expect(201)
         .expect((res) => {
           expect(res.body).toHaveProperty('id');
-          expect(res.body.type).toBe('ONE_ON_ONE');
+          expect(res.body.isGroup).toBe(false);
         });
     });
   });

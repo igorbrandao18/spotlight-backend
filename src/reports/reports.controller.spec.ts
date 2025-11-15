@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { AppModule } from '../app.module';
@@ -72,6 +72,7 @@ describe('ReportsController', () => {
         .send({
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
+          category: 'USER',
           description: 'This user is spamming',
         })
         .expect(201)
@@ -91,6 +92,7 @@ describe('ReportsController', () => {
           reporterId: userId,
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
+          category: 'USER',
           description: 'Test report',
           status: 'PENDING',
         },
@@ -122,6 +124,7 @@ describe('ReportsController', () => {
           reporterId: userId,
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
+          category: 'USER',
           description: 'Test report',
           status: 'PENDING',
         },
@@ -146,6 +149,7 @@ describe('ReportsController', () => {
           reporterId: userId,
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
+          category: 'USER',
           description: 'Test report',
           status: 'PENDING',
         },

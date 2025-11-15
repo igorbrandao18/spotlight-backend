@@ -77,12 +77,14 @@ describe('AuthService', () => {
         areaActivity: 'Photography',
       };
 
-      await service.register(registerDto);
+      const result = await service.register(registerDto);
+      expect(result).toHaveProperty('jwtToken');
 
       const user = await prisma.user.findUnique({
         where: { email: registerDto.email },
       });
 
+      expect(user).toBeDefined();
       expect(user.password).not.toBe(registerDto.password);
       const isPasswordHashed = await bcrypt.compare(registerDto.password, user.password);
       expect(isPasswordHashed).toBe(true);

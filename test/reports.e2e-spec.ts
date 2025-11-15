@@ -62,6 +62,7 @@ describe('Reports E2E Tests', () => {
         .send({
           reportedUserId: reportedUser.id,
           reason: 'SPAM',
+          category: 'USER',
           description: 'This user is spamming',
         })
         .expect(201);
