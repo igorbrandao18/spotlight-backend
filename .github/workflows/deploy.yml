@@ -23,21 +23,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to server
+      - name: Stop services and prepare
         uses: appleboy/ssh-action@master
         with:
           host: ${{ env.SERVER_HOST }}
           username: ${{ env.SERVER_USER }}
           password: ${{ env.SERVER_PASSWORD }}
           port: 22
-          command_timeout: 30m
-          timeout: 30m
+          command_timeout: 10m
           script: |
-            set -e
-            
             echo "🚀 Starting deployment..."
-            
-            # Stop existing services (but keep directory)
             echo "⏹️  Stopping existing services..."
             cd ${{ env.DEPLOY_PATH }} 2>/dev/null || true
             docker-compose down 2>/dev/null || true
@@ -45,25 +40,27 @@ jobs:
             pm2 delete spotlight-backend 2>/dev/null || true
             pkill -f "node.*dist/main" 2>/dev/null || true
             pkill -f "nest start" 2>/dev/null || true
-            
-            # Create deployment directory if it doesn't exist
-            echo "📁 Ensuring deployment directory exists..."
             mkdir -p ${{ env.DEPLOY_PATH }}
-            cd ${{ env.DEPLOY_PATH }}
-            
-            # Install system dependencies if needed
-            echo "📥 Installing system dependencies..."
+            echo "✅ Services stopped, directory ready"
+
+      - name: Install dependencies
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          command_timeout: 20m
+          script: |
             export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qq
+            apt-get update -qq || true
             
-            # Install Node.js if needed
             if ! command -v node &> /dev/null; then
               echo "📦 Installing Node.js..."
               curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
               apt-get install -y nodejs
             fi
             
-            # Install pnpm if needed
             if ! command -v pnpm &> /dev/null; then
               echo "📦 Installing pnpm..."
               curl -fsSL https://get.pnpm.io/install.sh | sh -
@@ -74,63 +71,63 @@ jobs:
               export PATH="$PNPM_HOME:$PATH"
             fi
             
-            # Install Docker if needed
-            if ! command -v docker &> /dev/null; then
-              echo "🐳 Installing Docker..."
-              curl -fsSL https://get.docker.com -o get-docker.sh
-              sh get-docker.sh
-              rm get-docker.sh
-            fi
-            
-            # Install Docker Compose if needed
-            if ! command -v docker-compose &> /dev/null; then
-              echo "🐳 Installing Docker Compose..."
-              curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-              chmod +x /usr/local/bin/docker-compose
-            fi
-            
-            # Install PM2 if needed
             if ! command -v pm2 &> /dev/null; then
               echo "📦 Installing PM2..."
               npm install -g pm2
             fi
-            
-            # Clone or update repository
-            echo "📥 Updating repository..."
+            echo "✅ Dependencies installed"
+
+      - name: Update code
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          command_timeout: 10m
+          script: |
+            cd ${{ env.DEPLOY_PATH }}
             if [ -d .git ]; then
-              echo "Repository exists, pulling latest changes..."
+              echo "📥 Pulling latest changes..."
               git fetch origin
               git reset --hard origin/main
               git clean -fd
             else
-              echo "Cloning repository..."
+              echo "📥 Cloning repository..."
               git clone https://github.com/${{ github.repository }}.git .
             fi
+            echo "✅ Code updated"
+
+      - name: Build and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          password: ${{ env.SERVER_PASSWORD }}
+          port: 22
+          command_timeout: 30m
+          script: |
+            cd ${{ env.DEPLOY_PATH }}
+            export PNPM_HOME="$HOME/.local/share/pnpm"
+            export PATH="$PNPM_HOME:$PATH"
             
-            # Setup environment
-            echo "⚙️  Setting up environment..."
             if [ ! -f .env ]; then
               cp .env.example .env
-              echo "⚠️  Please configure .env file with your production settings"
+              echo "⚠️  Please configure .env file"
             fi
             
-            # Install dependencies
             echo "📦 Installing dependencies..."
-            pnpm install --frozen-lockfile
+            pnpm install --frozen-lockfile || exit 1
             
-            # Generate Prisma Client
             echo "🔧 Generating Prisma Client..."
-            pnpm prisma generate
+            pnpm prisma generate || exit 1
             
-            # Run database migrations
-            echo "🗄️  Running database migrations..."
-            pnpm prisma migrate deploy || echo "⚠️  Migration failed, check database connection"
+            echo "🗄️  Running migrations..."
+            pnpm prisma migrate deploy || echo "⚠️  Migration warning"
             
-            # Build application
             echo "🔨 Building application..."
-            NODE_ENV=production pnpm run build
+            NODE_ENV=production pnpm run build || exit 1
             
-            # Start application with PM2
             echo "🚀 Starting application..."
             pm2 start dist/main.js \
               --name spotlight-backend \
@@ -139,18 +136,13 @@ jobs:
               --env production \
               --log-date-format "YYYY-MM-DD HH:mm:ss Z" \
               --merge-logs \
-              --max-memory-restart 500M
+              --max-memory-restart 500M || exit 1
             
-            pm2 save
+            pm2 save || true
             pm2 startup systemd -u ${{ env.SERVER_USER }} --hp /root || true
             
-            echo "✅ Deployment completed successfully!"
-            echo "📊 Application status:"
+            echo "✅ Deployment completed!"
             pm2 status
-            
-            # Show logs
-            echo "📋 Recent logs:"
-            pm2 logs spotlight-backend --lines 20 --nostream
 
       - name: Verify deployment
         uses: appleboy/ssh-action@master
