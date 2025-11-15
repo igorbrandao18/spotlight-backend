@@ -14,7 +14,8 @@ COPY pnpm-lock.yaml* ./
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Install all dependencies (including dev)
-RUN pnpm install --frozen-lockfile
+# Use --frozen-lockfile only if pnpm-lock.yaml exists
+RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; else pnpm install; fi
 
 # Copy Prisma schema
 COPY prisma ./prisma/
