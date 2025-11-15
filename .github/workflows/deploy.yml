@@ -31,7 +31,9 @@ jobs:
           password: ${{ env.SERVER_PASSWORD }}
           port: 22
           command_timeout: 10m
+          script_stop: true
           script: |
+            set +e
             echo "🚀 Starting deployment..."
             echo "⏹️  Stopping existing services..."
             cd ${{ env.DEPLOY_PATH }} 2>/dev/null || true
@@ -42,6 +44,7 @@ jobs:
             pkill -f "nest start" 2>/dev/null || true
             mkdir -p ${{ env.DEPLOY_PATH }}
             echo "✅ Services stopped, directory ready"
+            exit 0
 
       - name: Install dependencies
         uses: appleboy/ssh-action@master
