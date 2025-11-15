@@ -3,8 +3,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies for Prisma
-RUN apk add --no-cache openssl
+# Install dependencies for Prisma and health checks
+RUN apk add --no-cache openssl curl wget
 
 # Copy package files
 COPY package*.json ./
