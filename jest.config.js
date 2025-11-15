@@ -18,5 +18,12 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/../test/setup.ts'],
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        isolatedModules: true,
+      },
+    },
+  },
 };
 
