@@ -561,18 +561,20 @@ users/
 
 ### Test Types
 
-1. **Unit Tests** - Test individual methods with mocks
-2. **Integration Tests** - Test service + repository integration
-3. **E2E Tests** - Test complete HTTP request/response flow
+1. **Unit Tests** - Test individual methods with real database (NO MOCKS)
+2. **Integration Tests** - Test service + repository integration with real database
+3. **E2E Tests** - Test complete HTTP request/response flow with real database
 
 ### Rules
 
 - ✅ Use `@nestjs/testing` for test utilities
-- ✅ Mock Prisma service in unit tests
-- ✅ Use test database for integration/E2E tests
+- ✅ **ALWAYS use real database** - NO mocks for Prisma service
+- ✅ Use test database for all tests (unit, integration, E2E)
+- ✅ Clean database before/after each test
 - ✅ Test all error cases
 - ✅ Test validation rules
 - ✅ Use descriptive test names in English
+- ✅ Each module MUST have tests for service and controller
 
 ---
 

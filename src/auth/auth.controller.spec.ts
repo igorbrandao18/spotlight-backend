@@ -1,84 +1,114 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import * as request from 'supertest';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
+import { AppModule } from '../app.module';
+import { TestHelpers } from '../../test/helpers/test-helpers';
 
 describe('AuthController', () => {
+  let app: INestApplication;
   let controller: AuthController;
   let service: AuthService;
 
-  const mockAuthService = {
-    register: jest.fn(),
-    login: jest.fn(),
-    refreshToken: jest.fn(),
-    logout: jest.fn(),
-    forgotPassword: jest.fn(),
-    resetPassword: jest.fn(),
-    updatePassword: jest.fn(),
-  };
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [AuthController],
-      providers: [
-        {
-          provide: AuthService,
-          useValue: mockAuthService,
-        },
-      ],
+  beforeAll(async () => {
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
     }).compile();
 
-    controller = module.get<AuthController>(AuthController);
-    service = module.get<AuthService>(AuthService);
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    await app.init();
 
-    jest.clearAllMocks();
+    controller = moduleFixture.get<AuthController>(AuthController);
+    service = moduleFixture.get<AuthService>(AuthService);
   });
 
-  describe('register', () => {
-    it('should call authService.register', async () => {
-      const registerDto: RegisterDto = {
-        name: 'John Doe',
-        email: 'john@example.com',
-        password: 'password123',
-        areaActivity: 'Photography',
-      };
+  afterAll(async () => {
+    await TestHelpers.cleanup();
+    await app.close();
+  });
 
-      const expectedResult = {
-        jwtToken: 'token',
-        refreshToken: 'refresh',
-        userId: '1',
-      };
+  beforeEach(async () => {
+    await TestHelpers.cleanup();
+  });
 
-      mockAuthService.register.mockResolvedValue(expectedResult);
+  describe('POST /api/auth/register', () => {
+    it('should register a new user', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/register')
+        .send({
+          name: 'John Doe',
+          email: `john${Date.now()}@example.com`,
+          password: 'password123',
+          areaActivity: 'Photography',
+        })
+        .expect(201)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('jwtToken');
+          expect(res.body).toHaveProperty('refreshToken');
+          expect(res.body).toHaveProperty('userId');
+        });
+    });
 
-      const result = await controller.register(registerDto);
-
-      expect(service.register).toHaveBeenCalledWith(registerDto);
-      expect(result).toEqual(expectedResult);
+    it('should return 400 if validation fails', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/register')
+        .send({
+          name: 'John',
+          email: 'invalid-email',
+          password: '123',
+        })
+        .expect(400);
     });
   });
 
-  describe('login', () => {
-    it('should call authService.login', async () => {
-      const loginDto: LoginDto = {
-        email: 'test@example.com',
-        password: 'password123',
-      };
+  describe('POST /api/auth/login', () => {
+    it('should login successfully', async () => {
+      const user = await TestHelpers.createUser();
 
-      const expectedResult = {
-        jwtToken: 'token',
-        refreshToken: 'refresh',
-        userId: '1',
-      };
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          email: user.email,
+          password: 'password123',
+        })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('jwtToken');
+          expect(res.body).toHaveProperty('refreshToken');
+        });
+    });
 
-      mockAuthService.login.mockResolvedValue(expectedResult);
+    it('should return 401 with invalid credentials', () => {
+      return request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          email: 'nonexistent@example.com',
+          password: 'wrongpassword',
+        })
+        .expect(401);
+    });
+  });
 
-      const result = await controller.login(loginDto);
+  describe('POST /api/auth/refresh-token', () => {
+    it('should refresh token successfully', async () => {
+      const user = await TestHelpers.createUser();
+      const loginResponse = await request(app.getHttpServer())
+        .post('/api/auth/login')
+        .send({
+          email: user.email,
+          password: 'password123',
+        });
 
-      expect(service.login).toHaveBeenCalledWith(loginDto);
-      expect(result).toEqual(expectedResult);
+      return request(app.getHttpServer())
+        .post('/api/auth/refresh-token')
+        .send({ refreshToken: loginResponse.body.refreshToken })
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toHaveProperty('jwtToken');
+          expect(res.body).toHaveProperty('refreshToken');
+        });
     });
   });
 });
-
