@@ -1,229 +1,200 @@
-# K6 Load Testing
+# 🚀 k6 Load Testing
 
-## 📋 Overview
+Este diretório contém scripts de teste de carga usando [k6](https://k6.io/) para validar a performance e escalabilidade da API Spotlight.
 
-This directory contains load tests for the Spotlight Backend API using [k6](https://k6.io/).
+## 📋 Pré-requisitos
 
-## 🚀 Installation
-
-### macOS
+Instale o k6:
 ```bash
+# macOS
 brew install k6
-```
 
-### Linux
-```bash
-# Download and install
-wget https://github.com/grafana/k6/releases/download/v0.48.0/k6-v0.48.0-linux-amd64.tar.gz
-tar xzvf k6-v0.48.0-linux-amd64.tar.gz
-sudo mv k6-v0.48.0-linux-amd64/k6 /usr/local/bin/
-```
+# Linux
+sudo gpg -k
+sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+sudo apt-get update
+sudo apt-get install k6
 
-### Windows
-```bash
-# Using Chocolatey
+# Windows
 choco install k6
-
-# Or download from: https://github.com/grafana/k6/releases
 ```
 
-### Verify Installation
+## 📁 Scripts Disponíveis
+
+### 1. `auth-load-test.js` - Teste de Autenticação
+Testa apenas os endpoints de autenticação (register, login, refresh).
+
+**Uso:**
 ```bash
-k6 version
+# Local
+pnpm test:load:auth
+
+# Produção
+pnpm test:load:auth:prod
 ```
 
-## 📁 Test Files
+**Configuração:**
+- Duração: ~7 minutos
+- Usuários máximos: 100
+- Foco: Performance de autenticação
 
-### `auth-load-test.js`
-Comprehensive load test for authentication endpoints:
-- Registration
-- Login
-- Refresh Token
-- Protected endpoints
+### 2. `auth-load-test-realistic.js` - Teste Realista de Auth
+Teste de autenticação respeitando rate limits.
 
-**Load Profile:**
-- Ramp up: 0 → 10 → 50 → 100 users over 3.5 minutes
-- Sustained: 100 concurrent users for 2 minutes
-- Ramp down: 100 → 50 → 0 users over 1.5 minutes
-- **Total duration: ~7 minutes**
-
-**Thresholds:**
-- 95% of requests < 500ms
-- 99% of requests < 1s
-- Error rate < 1%
-
-### `api-load-test.js`
-General API load test:
-- User endpoints
-- Posts endpoints
-- Projects endpoints
-- Search endpoints
-
-**Load Profile:**
-- Ramp up: 0 → 5 → 20 → 50 users over 3.5 minutes
-- Sustained: 50 concurrent users for 2 minutes
-- Ramp down: 50 → 20 → 0 users over 1.5 minutes
-- **Total duration: ~7 minutes**
-
-## 🎯 Running Tests
-
-### Auth Load Test
+**Uso:**
 ```bash
-# Local development
-k6 run k6/load-tests/auth-load-test.js
+# Local
+pnpm test:load:realistic
 
-# Production (set API_URL)
-API_URL=https://spotlight.brandaodeveloper.com.br/api k6 run k6/load-tests/auth-load-test.js
-
-# With custom options
-k6 run --vus 50 --duration 5m k6/load-tests/auth-load-test.js
+# Produção
+pnpm test:load:realistic:prod
 ```
 
-### API Load Test
+**Configuração:**
+- Duração: ~7.5 minutos
+- Usuários máximos: 10
+- Respeita rate limits: Register (3/hora), Login (5/15min)
+
+### 3. `full-api-load-test.js` - Teste Completo da API ⭐
+Testa **TODOS** os módulos e endpoints da API simulando uso real.
+
+**Uso:**
 ```bash
-# Local development
-k6 run k6/load-tests/api-load-test.js
+# Local
+pnpm test:load:full
 
-# Production
-API_URL=https://spotlight.brandaodeveloper.com.br/api k6 run k6/load-tests/api-load-test.js
+# Produção
+pnpm test:load:full:prod
 ```
 
-## 📊 Understanding Results
+**Configuração:**
+- Duração: ~21 minutos
+- Usuários máximos: 100
+- Módulos testados:
+  - ✅ Auth (register, login, refresh)
+  - ✅ Users (getMe, search, follow/unfollow)
+  - ✅ Posts (list, create, get, reactions, comments)
+  - ✅ Projects (list, create, get, members, milestones)
+  - ✅ Portfolio (list, create, get, like, view, comments)
+  - ✅ Chat (rooms, messages)
+  - ✅ Reports (create)
+  - ✅ Partner Stores (list, get, equipments)
 
-### Key Metrics
+**Comportamento:**
+- Simula diferentes tipos de usuários
+- Probabilidades realistas de ações (ex: 80% lê posts, 15% cria posts)
+- Mantém estado entre requisições (tokens, IDs criados)
+- Delays realistas entre ações (3-8 segundos)
 
-**HTTP Metrics:**
-- `http_req_duration` - Request duration (p95, p99)
-- `http_req_failed` - Failed request rate
-- `http_reqs` - Total requests per second
+## 🎯 Thresholds de Performance
 
-**Custom Metrics:**
-- `auth_duration` - Authentication operations duration
-- `register_duration` - Registration duration
-- `login_duration` - Login duration
-- `refresh_duration` - Token refresh duration
-- `errors` - Custom error rate
-- `auth_success` - Successful auth operations count
-- `auth_failures` - Failed auth operations count
+Todos os testes validam:
 
-### Example Output
+- **http_req_duration p(95):** < 1000ms
+- **http_req_duration p(99):** < 2000ms
+- **http_req_failed:** < 5%
+- **Módulo específico:** Thresholds individuais por módulo
+
+## 📊 Interpretando Resultados
+
+### ✅ Sucesso
 ```
-✓ Register status is 200 or 201
-✓ Register has response body
-✓ Register response time < 1s
-✓ Login status is 200 or 201
-✓ RefreshToken status is 200 or 201
-✓ GetMe status is 200 or 201
-
-checks.........................: 100.00% ✓ 1500  ✗ 0
-data_received..................: 2.5 MB  60 kB/s
-data_sent......................: 1.2 MB  28 kB/s
-http_req_duration..............: avg=245ms min=120ms med=220ms max=850ms p(95)=420ms p(99)=680ms
-http_req_failed................: 0.00%   ✓ 0     ✗ 1500
-http_reqs.....................: 1500    35.71/s
-vus............................: 1       min=1    max=100
-```
-
-## 🎛️ Customization
-
-### Adjust Load Profile
-Edit the `stages` array in the test file:
-```javascript
-stages: [
-  { duration: '1m', target: 10 },   // 10 users for 1 minute
-  { duration: '2m', target: 50 },    // 50 users for 2 minutes
-  { duration: '1m', target: 0 },     // Ramp down to 0
-],
+✓ 'p(95)<1000' p(95)=450ms
+✓ 'rate<0.05' rate=0.02%
 ```
 
-### Adjust Thresholds
-Edit the `thresholds` object:
-```javascript
-thresholds: {
-  http_req_duration: ['p(95)<300'],  // 95% < 300ms
-  http_req_failed: ['rate<0.01'],    // < 1% errors
-},
+### ⚠️ Atenção
 ```
+✗ 'p(95)<1000' p(95)=1200ms
+```
+Indica que 5% das requisições estão acima do threshold. Investigar gargalos.
 
-### Change API URL
+### ❌ Crítico
+```
+✗ 'rate<0.05' rate=15.00%
+```
+Taxa de erro alta. Verificar logs e saúde da aplicação.
+
+## 🔧 Variáveis de Ambiente
+
 ```bash
-# Environment variable
-API_URL=https://api.example.com/api k6 run k6/load-tests/auth-load-test.js
+# URL da API
+API_URL=https://spotlight.brandaodeveloper.com.br/api
 
-# Or edit BASE_URL in the test file
-const BASE_URL = __ENV.API_URL || 'https://api.example.com/api';
+# Exemplo de uso
+API_URL=https://spotlight.brandaodeveloper.com.br/api k6 run k6/load-tests/full-api-load-test.js
 ```
 
-## 🔍 Performance Analysis
+## 📈 Métricas Customizadas
 
-### What to Look For
+Cada teste rastreia métricas específicas:
 
-**Good Performance:**
-- ✅ p95 < 500ms
-- ✅ p99 < 1s
-- ✅ Error rate < 1%
-- ✅ No memory leaks (stable VU count)
+- **auth_duration**: Tempo de operações de autenticação
+- **users_duration**: Tempo de operações de usuários
+- **posts_duration**: Tempo de operações de posts
+- **projects_duration**: Tempo de operações de projetos
+- **portfolio_duration**: Tempo de operações de portfolio
+- **chat_duration**: Tempo de operações de chat
+- **reports_duration**: Tempo de operações de reports
+- **partner_stores_duration**: Tempo de operações de partner stores
 
-**Warning Signs:**
-- ⚠️ p95 > 1s
-- ⚠️ Error rate > 5%
-- ⚠️ Increasing response times over time
-- ⚠️ High memory usage
+## 🎭 Simulação de Usuários
 
-**Critical Issues:**
-- ❌ p99 > 5s
-- ❌ Error rate > 10%
-- ❌ Timeouts
-- ❌ Server crashes
+O teste completo (`full-api-load-test.js`) simula diferentes padrões de uso:
 
-## 📈 Continuous Integration
+1. **Usuário Novo (10%)**: Registra e explora a plataforma
+2. **Usuário Ativo (90%)**: Login e uso completo da plataforma
+   - 80% lê posts
+   - 15% cria posts
+   - 25% interage (reactions, comments)
+   - 40% visualiza projetos
+   - 30% visualiza portfolio
+   - 25% acessa chat
+   - 20% busca usuários
+   - 5% cria reports
 
-### GitHub Actions Example
-```yaml
-name: Load Test
+## 🚨 Rate Limiting
 
-on:
-  schedule:
-    - cron: '0 2 * * *' # Daily at 2 AM
-  workflow_dispatch:
+Os testes respeitam os rate limits configurados:
 
-jobs:
-  load-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install k6
-        run: |
-          wget https://github.com/grafana/k6/releases/download/v0.48.0/k6-v0.48.0-linux-amd64.tar.gz
-          tar xzvf k6-v0.48.0-linux-amd64.tar.gz
-          sudo mv k6-v0.48.0-linux-amd64/k6 /usr/local/bin/
-      - name: Run load test
-        run: |
-          API_URL=${{ secrets.API_URL }} k6 run k6/load-tests/auth-load-test.js
+- **Register**: 3 tentativas/hora
+- **Login**: 5 tentativas/15 minutos
+- **Refresh Token**: 10 tentativas/minuto
+- **API Geral**: 100 requisições/minuto
+
+## 📝 Exemplo de Execução
+
+```bash
+# Teste completo em produção
+cd spotlight-backend
+pnpm test:load:full:prod
+
+# Saída esperada:
+# 🚀 Starting comprehensive API load test...
+# 📍 API URL: https://spotlight.brandaodeveloper.com.br/api
+# ⏱️  Test duration: ~21 minutes
+# 👥 Max concurrent users: 100
+# 📊 Testing all modules: Auth, Users, Posts, Projects, Portfolio, Chat, Reports, Partner Stores
 ```
 
-## 🐛 Troubleshooting
+## 🔍 Troubleshooting
 
-### Test Fails Immediately
-- Check API URL is correct
-- Verify API is running
-- Check network connectivity
+### Erro: "Connection refused"
+- Verifique se a API está rodando
+- Confirme a URL no `API_URL`
 
-### High Error Rate
-- Check server logs
-- Verify database connection
-- Check rate limiting settings
-- Monitor server resources (CPU, memory)
+### Erro: "429 Too Many Requests"
+- Rate limiting está funcionando
+- Use `auth-load-test-realistic.js` para testes respeitando limites
 
-### Slow Response Times
-- Check database query performance
-- Verify indexes are in place
-- Check for N+1 queries
-- Monitor database connection pool
+### Performance ruim
+- Verifique logs do Docker: `docker compose logs api`
+- Analise métricas do banco de dados
+- Revise índices criados no Prisma schema
 
-## 📚 Resources
+## 📚 Recursos
 
-- [k6 Documentation](https://k6.io/docs/)
-- [k6 Examples](https://k6.io/docs/examples/)
-- [Load Testing Best Practices](https://k6.io/docs/test-types/load-testing/)
-
+- [Documentação k6](https://k6.io/docs/)
+- [k6 Metrics](https://k6.io/docs/using-k6/metrics/)
+- [k6 Thresholds](https://k6.io/docs/using-k6/thresholds/)
