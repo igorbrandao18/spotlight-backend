@@ -1,20 +1,37 @@
 import { IsString, IsOptional, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 class SocialLinkDto {
+  @ApiProperty({
+    description: 'Social media platform',
+    example: 'Instagram',
+  })
   @IsString()
   platform: string;
 
+  @ApiProperty({
+    description: 'Social media URL',
+    example: 'https://instagram.com/username',
+  })
   @IsString()
   url: string;
 }
 
 class WebsiteDto {
+  @ApiProperty({
+    description: 'Website URL',
+    example: 'https://example.com',
+  })
   @IsString()
   url: string;
 }
 
 class LocationDto {
+  @ApiProperty({
+    description: 'Location address',
+    example: 'São Paulo, SP, Brazil',
+  })
   @IsString()
   address: string;
 }
@@ -148,4 +165,3 @@ export class UpdateUserProfileDto {
   @Type(() => RateDto)
   rates?: RateDto;
 }
-

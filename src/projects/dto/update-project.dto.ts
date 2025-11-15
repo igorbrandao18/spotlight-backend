@@ -1,6 +1,11 @@
-import { IsString, IsOptional, IsArray, ValidateNested, IsEnum } from 'class-validator';
+import { IsString, IsOptional, ValidateNested, IsEnum, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProjectPriority, ProjectStatus, ProjectMemberDto, ProjectMilestoneDto } from './create-project.dto';
+import {
+  ProjectPriority,
+  ProjectStatus,
+  ProjectMemberDto,
+  ProjectMilestoneDto,
+} from './create-project.dto';
 
 export class UpdateProjectDto {
   @IsOptional()
@@ -38,4 +43,3 @@ export class UpdateProjectDto {
   // File will be handled via multipart/form-data
   file?: Express.Multer.File;
 }
-

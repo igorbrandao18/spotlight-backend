@@ -33,7 +33,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private chatService: ChatService,
   ) {}
 
-  async handleConnection(client: Socket) {
+  handleConnection(client: Socket) {
     try {
       const token = client.handshake.query.token as string;
       if (!token) {
@@ -62,8 +62,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  async handleDisconnect(client: Socket) {
-    const userId = client.data.userId;
+  handleDisconnect(client: Socket) {
+    const userId = client.data.userId as string | undefined;
     if (userId) {
       this.connectedUsers.delete(userId);
       this.server.emit('user_offline', { userId });
@@ -72,7 +72,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('join')
-  async handleJoin(@ConnectedSocket() client: Socket, @MessageBody() roomId: string) {
+  async handleJoin(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() roomId: string,
+  ) {
     const userId = client.data.userId;
     if (!userId) {
       return { error: 'Unauthorized' };
@@ -89,7 +92,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('leave')
-  async handleLeave(@ConnectedSocket() client: Socket, @MessageBody() roomId: string) {
+  async handleLeave(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() roomId: string,
+  ) {
     client.leave(`room:${roomId}`);
     return { success: true, roomId };
   }
@@ -143,4 +149,3 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 }
-

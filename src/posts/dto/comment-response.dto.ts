@@ -13,4 +13,3 @@ export class CommentResponseDto {
   updatedAt: Date;
   replies?: CommentResponseDto[];
 }
-

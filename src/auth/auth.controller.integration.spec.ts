@@ -2,12 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../app.module';
-import { PrismaService } from '../prisma/prisma.service';
 import { TestHelpers } from '../../test/helpers/test-helpers';
 
 describe('AuthController (Integration)', () => {
   let app: INestApplication;
-  let prisma: PrismaService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -15,7 +13,9 @@ describe('AuthController (Integration)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     prisma = moduleFixture.get<PrismaService>(PrismaService);
 
     await app.init();
@@ -136,4 +136,3 @@ describe('AuthController (Integration)', () => {
     });
   });
 });
-

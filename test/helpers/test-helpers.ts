@@ -13,7 +13,9 @@ export class TestHelpers {
         password: hashedPassword,
         areaActivity: 'Photography',
         ...overrides,
-        password: overrides.password ? await bcrypt.hash(overrides.password as string, 10) : hashedPassword,
+        password: overrides.password
+          ? await bcrypt.hash(overrides.password as string, 10)
+          : hashedPassword,
       },
     });
   }
@@ -43,8 +45,10 @@ export class TestHelpers {
     // Delete in correct order to respect foreign keys to avoid deadlocks
     try {
       // Disable triggers temporarily to avoid FK constraint issues
-      await prisma.$executeRawUnsafe(`SET session_replication_role = 'replica';`);
-      
+      await prisma.$executeRawUnsafe(
+        `SET session_replication_role = 'replica';`,
+      );
+
       // Delete in reverse dependency order
       await prisma.$executeRawUnsafe(`TRUNCATE TABLE 
         "reports", 
@@ -68,9 +72,11 @@ export class TestHelpers {
         "refresh_tokens",
         "users"
       CASCADE;`);
-      
-      await prisma.$executeRawUnsafe(`SET session_replication_role = 'origin';`);
-    } catch (error) {
+
+      await prisma.$executeRawUnsafe(
+        `SET session_replication_role = 'origin';`,
+      );
+    } catch {
       // If truncate fails, try individual deletes
       try {
         await prisma.report.deleteMany();
@@ -93,13 +99,17 @@ export class TestHelpers {
         await prisma.follow.deleteMany();
         await prisma.refreshToken.deleteMany();
         await prisma.user.deleteMany();
-      } catch (deleteError) {
+      } catch {
         // Ignore errors during cleanup
       }
     }
   }
 
-  static async getAuthToken(email: string, password: string, app: any): Promise<string> {
+  static async getAuthToken(
+    email: string,
+    password: string,
+    app: any,
+  ): Promise<string> {
     const response = await app.inject({
       method: 'POST',
       url: '/api/auth/login',
@@ -110,4 +120,3 @@ export class TestHelpers {
     return body.jwtToken;
   }
 }
-

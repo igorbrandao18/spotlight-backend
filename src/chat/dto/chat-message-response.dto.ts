@@ -7,4 +7,3 @@ export class ChatMessageResponseDto {
   type: string;
   createdAt: Date;
 }
-

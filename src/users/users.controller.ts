@@ -12,13 +12,25 @@ import {
   UploadedFile,
   ParseIntPipe,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
-import { ChangeAvailabilityDto } from './dto/change-availability.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { CurrentUserPayload } from '../common/interfaces/user.interface';
 
+@ApiTags('users')
+@ApiBearerAuth('JWT-auth')
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
@@ -30,42 +42,30 @@ export class UsersController {
   }
 
   @Get()
-  async searchUsers(
-    @Query('search') search: string,
-    @CurrentUser() user: any,
-  ) {
+  async searchUsers(@Query('search') search: string, @CurrentUser() user: any) {
     return this.usersService.searchUsers(search, user.id);
   }
 
   @Get(':id/public')
-  async getUserPublic(
-    @Param('id') id: string,
-    @CurrentUser() user: any,
-  ) {
+  async getUserPublic(@Param('id') id: string, @CurrentUser() user: any) {
     return this.usersService.getUserPublic(id, user.id);
   }
 
   @Put('me')
   async updateProfile(
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() updateDto: UpdateUserProfileDto,
   ) {
     return this.usersService.updateProfile(user.id, updateDto);
   }
 
   @Post('follow/:id')
-  async followUser(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
+  async followUser(@CurrentUser() user: any, @Param('id') id: string) {
     return this.usersService.followUser(user.id, id);
   }
 
   @Delete('unfollow/:id')
-  async unfollowUser(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
+  async unfollowUser(@CurrentUser() user: any, @Param('id') id: string) {
     return this.usersService.unfollowUser(user.id, id);
   }
 
@@ -81,24 +81,21 @@ export class UsersController {
 
   @Put('me/:availability')
   async changeAvailability(
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Param('availability') availability: string,
   ) {
     return this.usersService.changeAvailability(user.id, availability);
   }
 
   @Delete(':id/disable')
-  async disableUser(
-    @CurrentUser() user: any,
-    @Param('id') id: string,
-  ) {
+  async disableUser(@CurrentUser() user: any, @Param('id') id: string) {
     return this.usersService.disableUser(id, user.id);
   }
 
   @Put('me/images')
   @UseInterceptors(FileInterceptor('avatarFile'))
   async uploadAvatar(
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.usersService.uploadAvatar(user.id, file);
@@ -107,7 +104,7 @@ export class UsersController {
   @Put('me/images')
   @UseInterceptors(FileInterceptor('coverFile'))
   async uploadCoverImage(
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.usersService.uploadCoverImage(user.id, file);
@@ -116,7 +113,7 @@ export class UsersController {
   @Post('me/resume')
   @UseInterceptors(FileInterceptor('resumeFile'))
   async uploadResume(
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.usersService.uploadResume(user.id, file);
@@ -129,24 +126,24 @@ export class UsersController {
 
   @Delete('me/locations/:id')
   async deleteLocation(
-    @CurrentUser() user: any,
-    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Param('id') id: string,
   ) {
     return this.usersService.deleteLocation(user.id, id);
   }
 
   @Delete('me/social/:id')
   async deleteSocialLink(
-    @CurrentUser() user: any,
-    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Param('id') id: string,
   ) {
     return this.usersService.deleteSocialLink(user.id, id);
   }
 
   @Delete('me/websites/:id')
   async deleteWebsite(
-    @CurrentUser() user: any,
-    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserPayload,
+    @Param('id') id: string,
   ) {
     return this.usersService.deleteWebsite(user.id, id);
   }
@@ -157,11 +154,7 @@ export class UsersController {
   }
 
   @Put('preferences')
-  async updatePreferences(
-    @CurrentUser() user: any,
-    @Body() preferences: any,
-  ) {
+  async updatePreferences(@CurrentUser() user: any, @Body() preferences: any) {
     return this.usersService.updatePreferences(user.id, preferences);
   }
 }
-

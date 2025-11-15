@@ -3,7 +3,7 @@ import { PartnerStoresService } from './partner-stores.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 describe('PartnerStoresService', () => {
   let service: PartnerStoresService;
@@ -54,7 +54,7 @@ describe('PartnerStoresService', () => {
 
   describe('findAll', () => {
     it('should return list of partner stores', async () => {
-      const admin = await TestHelpers.createUser({ role: 'ADMIN' });
+      await TestHelpers.createUser({ role: 'ADMIN' });
 
       await prisma.partnerStore.create({
         data: {
@@ -102,7 +102,9 @@ describe('PartnerStoresService', () => {
     });
 
     it('should throw NotFoundException if store not found', async () => {
-      await expect(service.findOne('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -126,7 +128,11 @@ describe('PartnerStoresService', () => {
         available: true,
       };
 
-      const result = await service.createEquipment(admin.id, store.id, equipmentDto);
+      const result = await service.createEquipment(
+        admin.id,
+        store.id,
+        equipmentDto,
+      );
 
       expect(result).toHaveProperty('id');
       expect(result.name).toBe(equipmentDto.name);
@@ -160,11 +166,12 @@ describe('PartnerStoresService', () => {
         },
       });
 
-      const result = await service.findAllEquipment({ partnerStoreId: store.id });
+      const result = await service.findAllEquipment({
+        partnerStoreId: store.id,
+      });
 
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThanOrEqual(1);
     });
   });
 });
-

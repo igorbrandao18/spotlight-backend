@@ -16,6 +16,15 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -24,7 +33,10 @@ import { AddMemberDto } from './dto/add-member.dto';
 import { CreateMilestoneDto } from './dto/create-milestone.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { CurrentUserPayload } from '../common/interfaces/user.interface';
 
+@ApiTags('projects')
+@ApiBearerAuth('JWT-auth')
 @Controller('projects')
 @UseGuards(JwtAuthGuard)
 export class ProjectsController {
@@ -34,7 +46,7 @@ export class ProjectsController {
   async findAll(
     @Query('projectId') projectId?: string,
     @Query('archived') archived?: string,
-    @CurrentUser() user?: any,
+    @CurrentUser() user?: CurrentUserPayload,
   ) {
     const isArchived = archived === 'true';
     return this.projectsService.findAll(projectId || user?.id, isArchived);
@@ -48,7 +60,7 @@ export class ProjectsController {
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async create(
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() createProjectDto: CreateProjectDto,
     @UploadedFile(
       new ParseFilePipe({
@@ -65,10 +77,7 @@ export class ProjectsController {
   }
 
   @Get(':id')
-  async findOne(
-    @Param('id') id: string,
-    @Query('archived') archived?: string,
-  ) {
+  async findOne(@Param('id') id: string, @Query('archived') archived?: string) {
     const isArchived = archived === 'true';
     return this.projectsService.findOne(id, isArchived);
   }
@@ -77,7 +86,7 @@ export class ProjectsController {
   @UseInterceptors(FileInterceptor('file'))
   async update(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() updateProjectDto: UpdateProjectDto,
     @UploadedFile(
       new ParseFilePipe({
@@ -111,7 +120,7 @@ export class ProjectsController {
   @Post(':id/members')
   async addMember(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() addMemberDto: AddMemberDto,
   ) {
     return this.projectsService.addMember(id, user.id, addMemberDto);
@@ -120,8 +129,8 @@ export class ProjectsController {
   @Delete(':id/members/:memberId')
   async removeMember(
     @Param('id') id: string,
-    @Param('memberId', ParseIntPipe) memberId: number,
-    @CurrentUser() user: any,
+    @Param('memberId') memberId: string,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
     return this.projectsService.removeMember(id, memberId, user.id);
   }
@@ -134,27 +143,36 @@ export class ProjectsController {
   @Post(':id/milestones')
   async createMilestone(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() createMilestoneDto: CreateMilestoneDto,
   ) {
-    return this.projectsService.createMilestone(id, user.id, createMilestoneDto);
+    return this.projectsService.createMilestone(
+      id,
+      user.id,
+      createMilestoneDto,
+    );
   }
 
   @Put(':id/milestones/:milestoneId')
   async updateMilestone(
     @Param('id') id: string,
-    @Param('milestoneId', ParseIntPipe) milestoneId: number,
-    @CurrentUser() user: any,
+    @Param('milestoneId') milestoneId: string,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() updateMilestoneDto: Partial<CreateMilestoneDto>,
   ) {
-    return this.projectsService.updateMilestone(id, milestoneId, user.id, updateMilestoneDto);
+    return this.projectsService.updateMilestone(
+      id,
+      milestoneId,
+      user.id,
+      updateMilestoneDto,
+    );
   }
 
   @Delete(':id/milestones/:milestoneId')
   async deleteMilestone(
     @Param('id') id: string,
-    @Param('milestoneId', ParseIntPipe) milestoneId: number,
-    @CurrentUser() user: any,
+    @Param('milestoneId') milestoneId: string,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
     return this.projectsService.deleteMilestone(id, milestoneId, user.id);
   }
@@ -163,7 +181,7 @@ export class ProjectsController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -177,4 +195,3 @@ export class ProjectsController {
     return this.projectsService.uploadImage(id, user.id, file);
   }
 }
-

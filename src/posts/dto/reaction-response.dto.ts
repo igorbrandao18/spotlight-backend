@@ -10,4 +10,3 @@ export class ReactionResponseDto {
   };
   createdAt: Date;
 }
-

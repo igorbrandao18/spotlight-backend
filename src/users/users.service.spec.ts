@@ -3,7 +3,7 @@ import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -41,7 +41,9 @@ describe('UsersService', () => {
     });
 
     it('should throw NotFoundException if user not found', async () => {
-      await expect(service.getMe('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.getMe('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should include metrics in response', async () => {
@@ -75,8 +77,14 @@ describe('UsersService', () => {
     });
 
     it('should filter users by search term', async () => {
-      await TestHelpers.createUser({ name: 'John Doe', email: 'john@example.com' });
-      await TestHelpers.createUser({ name: 'Jane Smith', email: 'jane@example.com' });
+      await TestHelpers.createUser({
+        name: 'John Doe',
+        email: 'john@example.com',
+      });
+      await TestHelpers.createUser({
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+      });
 
       const result = await service.findAll({ search: 'John' });
 
@@ -96,7 +104,9 @@ describe('UsersService', () => {
     });
 
     it('should throw NotFoundException if user not found', async () => {
-      await expect(service.findOnePublic('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOnePublic('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -122,7 +132,9 @@ describe('UsersService', () => {
     it('should throw BadRequestException if trying to follow self', async () => {
       const user = await TestHelpers.createUser();
 
-      await expect(service.followUser(user.id, user.id)).rejects.toThrow(BadRequestException);
+      await expect(service.followUser(user.id, user.id)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw BadRequestException if already following', async () => {
@@ -131,7 +143,9 @@ describe('UsersService', () => {
 
       await service.followUser(follower.id, following.id);
 
-      await expect(service.followUser(follower.id, following.id)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.followUser(follower.id, following.id),
+      ).rejects.toThrow('BadRequestException');
     });
   });
 

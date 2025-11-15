@@ -5,4 +5,3 @@ export class ChangeAvailabilityDto {
   @IsIn(['AVAILABLE', 'BUSY', 'AWAY', 'OFFLINE'])
   availability: string;
 }
-

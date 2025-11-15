@@ -1,17 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { ProjectsController } from './projects.controller';
-import { ProjectsService } from './projects.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
 
 describe('ProjectsController', () => {
   let app: INestApplication;
-  let controller: ProjectsController;
-  let service: ProjectsService;
   let authToken: string;
-  let userId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -19,11 +14,10 @@ describe('ProjectsController', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
-
-    controller = moduleFixture.get<ProjectsController>(ProjectsController);
-    service = moduleFixture.get<ProjectsService>(ProjectsService);
   });
 
   afterAll(async () => {
@@ -149,4 +143,3 @@ describe('ProjectsController', () => {
     });
   });
 });
-

@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto';
-import { ChangeAvailabilityDto } from './dto/change-availability.dto';
 
 @Injectable()
 export class UsersService {
@@ -55,7 +54,9 @@ export class UsersService {
           OR: [
             { name: { contains: search, mode: 'insensitive' as const } },
             { email: { contains: search, mode: 'insensitive' as const } },
-            { areaActivity: { contains: search, mode: 'insensitive' as const } },
+            {
+              areaActivity: { contains: search, mode: 'insensitive' as const },
+            },
             { title: { contains: search, mode: 'insensitive' as const } },
           ],
           enabled: true,
@@ -74,7 +75,7 @@ export class UsersService {
         isVerified: true,
         avatar: true,
         coverImage: true,
-        metrics: {
+        _count: {
           select: {
             followers: true,
             following: true,
@@ -115,6 +116,12 @@ export class UsersService {
       return {
         content: users.map((user) => ({
           ...user,
+          metrics: {
+            followers: user._count.followers,
+            following: user._count.following,
+            projects: user._count.ownedProjects,
+            rating: 0, // TODO: Implement rating system
+          },
           isFollowing: followMap.has(user.id),
           isFollowed: false, // TODO: Check if user follows current user
           isBlocked: false, // TODO: Implement blocking
@@ -224,7 +231,7 @@ export class UsersService {
     } = updateDto;
 
     // Update user
-    const updatedUser = await this.prisma.user.update({
+    await this.prisma.user.update({
       where: { id: userId },
       data: {
         ...userData,
@@ -412,7 +419,7 @@ export class UsersService {
       throw new BadRequestException('Invalid availability status');
     }
 
-    const user = await this.prisma.user.update({
+    await this.prisma.user.update({
       where: { id: userId },
       data: { chatAvailability: availability },
     });
@@ -479,7 +486,7 @@ export class UsersService {
     });
   }
 
-  async deleteLocation(userId: string, locationId: number) {
+  async deleteLocation(userId: string, locationId: string) {
     const location = await this.prisma.location.findUnique({
       where: { id: locationId },
     });
@@ -493,7 +500,7 @@ export class UsersService {
     });
   }
 
-  async deleteSocialLink(userId: string, linkId: number) {
+  async deleteSocialLink(userId: string, linkId: string) {
     const link = await this.prisma.socialLink.findUnique({
       where: { id: linkId },
     });
@@ -507,7 +514,7 @@ export class UsersService {
     });
   }
 
-  async deleteWebsite(userId: string, websiteId: number) {
+  async deleteWebsite(userId: string, websiteId: string) {
     const website = await this.prisma.website.findUnique({
       where: { id: websiteId },
     });
@@ -543,4 +550,3 @@ export class UsersService {
     });
   }
 }
-

@@ -13,6 +13,14 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiParam,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -21,7 +29,10 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateReactionDto } from './dto/create-reaction.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import type { CurrentUserPayload } from '../common/interfaces/user.interface';
 
+@ApiTags('posts')
+@ApiBearerAuth('JWT-auth')
 @Controller('posts')
 @UseGuards(JwtAuthGuard)
 export class PostsController {
@@ -35,7 +46,7 @@ export class PostsController {
   @Post()
   @UseInterceptors(FileInterceptor('image'))
   async create(
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() createPostDto: CreatePostDto,
     @UploadedFile(
       new ParseFilePipe({
@@ -60,7 +71,7 @@ export class PostsController {
   @UseInterceptors(FileInterceptor('image'))
   async update(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() updatePostDto: UpdatePostDto,
     @UploadedFile(
       new ParseFilePipe({
@@ -89,7 +100,7 @@ export class PostsController {
   @Post(':id/comments')
   async createComment(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() createCommentDto: CreateCommentDto,
   ) {
     return this.postsService.createComment(id, user.id, createCommentDto);
@@ -108,7 +119,7 @@ export class PostsController {
   @Post(':id/reactions')
   async createReaction(
     @Param('id') id: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: CurrentUserPayload,
     @Body() createReactionDto: CreateReactionDto,
   ) {
     return this.postsService.createReaction(id, user.id, createReactionDto);
@@ -119,4 +130,3 @@ export class PostsController {
     return this.postsService.deleteReaction(id, user.id);
   }
 }
-

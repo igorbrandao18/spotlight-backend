@@ -20,7 +20,9 @@ describe('Reports E2E Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     prisma = moduleFixture.get<PrismaService>(PrismaService);
 
     await app.init();
@@ -78,7 +80,9 @@ describe('Reports E2E Tests', () => {
         .expect(200);
 
       expect(Array.isArray(listReportsResponse.body)).toBe(true);
-      expect(listReportsResponse.body.some((r: any) => r.id === reportId)).toBe(true);
+      expect(listReportsResponse.body.some((r: any) => r.id === reportId)).toBe(
+        true,
+      );
 
       // 3. Get report details (admin only)
       const getReportResponse = await request(app.getHttpServer())
@@ -101,7 +105,9 @@ describe('Reports E2E Tests', () => {
         .expect(200);
 
       expect(updateReportResponse.body.status).toBe('RESOLVED');
-      expect(updateReportResponse.body.adminNotes).toBe('Issue has been resolved');
+      expect(updateReportResponse.body.adminNotes).toBe(
+        'Issue has been resolved',
+      );
 
       // 5. Verify non-admin cannot access reports list
       await request(app.getHttpServer())
@@ -122,7 +128,13 @@ describe('Reports E2E Tests', () => {
     it('should handle different report reasons', async () => {
       const reportedUser = await TestHelpers.createUser();
 
-      const reasons = ['SPAM', 'INAPPROPRIATE_CONTENT', 'HARASSMENT', 'FAKE_ACCOUNT', 'OTHER'];
+      const reasons = [
+        'SPAM',
+        'INAPPROPRIATE_CONTENT',
+        'HARASSMENT',
+        'FAKE_ACCOUNT',
+        'OTHER',
+      ];
 
       for (const reason of reasons) {
         const response = await request(app.getHttpServer())
@@ -140,4 +152,3 @@ describe('Reports E2E Tests', () => {
     });
   });
 });
-

@@ -1,21 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { ReportsController } from './reports.controller';
-import { ReportsService } from './reports.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
 import { PrismaService } from '../prisma/prisma.service';
 
 describe('ReportsController', () => {
   let app: INestApplication;
-  let controller: ReportsController;
-  let service: ReportsService;
-  let prisma: PrismaService;
   let userToken: string;
   let adminToken: string;
   let userId: string;
-  let adminId: string;
+  let prisma: PrismaService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -23,11 +18,11 @@ describe('ReportsController', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
 
-    controller = moduleFixture.get<ReportsController>(ReportsController);
-    service = moduleFixture.get<ReportsService>(ReportsService);
     prisma = moduleFixture.get<PrismaService>(PrismaService);
   });
 
@@ -43,7 +38,6 @@ describe('ReportsController', () => {
     userId = user.id;
 
     const admin = await TestHelpers.createUser({ role: 'ADMIN' });
-    adminId = admin.id;
 
     const userLoginResponse = await request(app.getHttpServer())
       .post('/api/auth/login')
@@ -166,4 +160,3 @@ describe('ReportsController', () => {
     });
   });
 });
-

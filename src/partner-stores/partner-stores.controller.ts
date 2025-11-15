@@ -15,12 +15,22 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
 } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiParam,
+} from '@nestjs/swagger';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { PartnerStoresService } from './partner-stores.service';
 import { CreatePartnerStoreDto } from './dto/create-partner-store.dto';
 import { CreateEquipmentDto } from './dto/create-equipment.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
+@ApiTags('partner-stores')
+@ApiBearerAuth('JWT-auth')
 @Controller('partner-stores')
 @UseGuards(JwtAuthGuard)
 export class PartnerStoresController {
@@ -153,4 +163,3 @@ export class PartnerStoresController {
     return this.partnerStoresService.deleteEquipmentImage(id, key);
   }
 }
-

@@ -19,4 +19,3 @@ export class CreateChatRoomDto {
   @IsString()
   userId?: string;
 }
-

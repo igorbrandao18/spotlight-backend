@@ -1,19 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { ChatController } from './chat.controller';
-import { ChatService } from './chat.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
-import { PrismaService } from '../prisma/prisma.service';
-
 describe('ChatController', () => {
   let app: INestApplication;
-  let controller: ChatController;
-  let service: ChatService;
-  let prisma: PrismaService;
   let authToken: string;
-  let userId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -21,12 +13,10 @@ describe('ChatController', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
-
-    controller = moduleFixture.get<ChatController>(ChatController);
-    service = moduleFixture.get<ChatService>(ChatService);
-    prisma = moduleFixture.get<PrismaService>(PrismaService);
   });
 
   afterAll(async () => {
@@ -58,10 +48,7 @@ describe('ChatController', () => {
         data: {
           isGroup: false,
           members: {
-            create: [
-              { userId },
-              { userId: user2.id },
-            ],
+            create: [{ userId }, { userId: user2.id }],
           },
         },
       });
@@ -84,10 +71,7 @@ describe('ChatController', () => {
         data: {
           isGroup: false,
           members: {
-            create: [
-              { userId },
-              { userId: user2.id },
-            ],
+            create: [{ userId }, { userId: user2.id }],
           },
         },
       });
@@ -110,10 +94,7 @@ describe('ChatController', () => {
         data: {
           isGroup: false,
           members: {
-            create: [
-              { userId },
-              { userId: user2.id },
-            ],
+            create: [{ userId }, { userId: user2.id }],
           },
           messages: {
             create: [
@@ -151,4 +132,3 @@ describe('ChatController', () => {
     });
   });
 });
-

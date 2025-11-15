@@ -1,19 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { PortfolioController } from './portfolio.controller';
-import { PortfolioService } from './portfolio.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
-import { PrismaService } from '../prisma/prisma.service';
 
 describe('PortfolioController', () => {
   let app: INestApplication;
-  let controller: PortfolioController;
-  let service: PortfolioService;
-  let prisma: PrismaService;
   let authToken: string;
-  let userId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -21,12 +14,10 @@ describe('PortfolioController', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
-
-    controller = moduleFixture.get<PortfolioController>(PortfolioController);
-    service = moduleFixture.get<PortfolioService>(PortfolioService);
-    prisma = moduleFixture.get<PrismaService>(PrismaService);
   });
 
   afterAll(async () => {
@@ -145,4 +136,3 @@ describe('PortfolioController', () => {
     });
   });
 });
-

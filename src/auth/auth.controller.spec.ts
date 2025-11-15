@@ -8,8 +8,6 @@ import { TestHelpers } from '../../test/helpers/test-helpers';
 
 describe('AuthController', () => {
   let app: INestApplication;
-  let controller: AuthController;
-  let service: AuthService;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -17,7 +15,9 @@ describe('AuthController', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
 
     controller = moduleFixture.get<AuthController>(AuthController);

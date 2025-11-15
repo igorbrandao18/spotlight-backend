@@ -11,4 +11,3 @@ export class ChatRoomResponseDto {
     avatar?: string;
   }[];
 }
-

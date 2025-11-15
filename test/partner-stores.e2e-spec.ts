@@ -19,7 +19,9 @@ describe('Partner Stores E2E Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     prisma = moduleFixture.get<PrismaService>(PrismaService);
 
     await app.init();
@@ -116,7 +118,9 @@ describe('Partner Stores E2E Tests', () => {
         .expect(200);
 
       expect(Array.isArray(listEquipmentResponse.body)).toBe(true);
-      expect(listEquipmentResponse.body.some((e: any) => e.id === equipmentId)).toBe(true);
+      expect(
+        listEquipmentResponse.body.some((e: any) => e.id === equipmentId),
+      ).toBe(true);
 
       // 7. Update equipment
       const updateEquipmentResponse = await request(app.getHttpServer())
@@ -138,7 +142,9 @@ describe('Partner Stores E2E Tests', () => {
         .expect(200);
 
       expect(Array.isArray(listStoresResponse.body)).toBe(true);
-      expect(listStoresResponse.body.some((s: any) => s.id === storeId)).toBe(true);
+      expect(listStoresResponse.body.some((s: any) => s.id === storeId)).toBe(
+        true,
+      );
 
       // 9. Delete equipment
       await request(app.getHttpServer())
@@ -154,4 +160,3 @@ describe('Partner Stores E2E Tests', () => {
     });
   });
 });
-

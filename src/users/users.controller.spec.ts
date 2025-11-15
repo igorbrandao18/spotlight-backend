@@ -1,17 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
 
 describe('UsersController', () => {
   let app: INestApplication;
-  let controller: UsersController;
-  let service: UsersService;
   let authToken: string;
-  let userId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -19,11 +14,10 @@ describe('UsersController', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
-
-    controller = moduleFixture.get<UsersController>(UsersController);
-    service = moduleFixture.get<UsersService>(UsersService);
   });
 
   afterAll(async () => {
@@ -62,9 +56,7 @@ describe('UsersController', () => {
     });
 
     it('should return 401 without authentication', () => {
-      return request(app.getHttpServer())
-        .get('/api/users/me')
-        .expect(401);
+      return request(app.getHttpServer()).get('/api/users/me').expect(401);
     });
   });
 
@@ -83,8 +75,14 @@ describe('UsersController', () => {
     });
 
     it('should filter users by search term', async () => {
-      await TestHelpers.createUser({ name: 'John Doe', email: 'john@example.com' });
-      await TestHelpers.createUser({ name: 'Jane Smith', email: 'jane@example.com' });
+      await TestHelpers.createUser({
+        name: 'John Doe',
+        email: 'john@example.com',
+      });
+      await TestHelpers.createUser({
+        name: 'Jane Smith',
+        email: 'jane@example.com',
+      });
 
       return request(app.getHttpServer())
         .get('/api/users?search=John')
@@ -157,7 +155,7 @@ describe('UsersController', () => {
   describe('DELETE /api/users/unfollow/:id', () => {
     it('should unfollow a user', async () => {
       const userToFollow = await TestHelpers.createUser();
-      
+
       // First follow
       await request(app.getHttpServer())
         .post(`/api/users/follow/${userToFollow.id}`)
@@ -174,7 +172,7 @@ describe('UsersController', () => {
   describe('GET /api/users/followed', () => {
     it('should return list of followed users', async () => {
       const userToFollow = await TestHelpers.createUser();
-      
+
       await request(app.getHttpServer())
         .post(`/api/users/follow/${userToFollow.id}`)
         .set('Authorization', `Bearer ${authToken}`);
@@ -185,7 +183,9 @@ describe('UsersController', () => {
         .expect(200)
         .expect((res) => {
           expect(Array.isArray(res.body)).toBe(true);
-          expect(res.body.some((u: any) => u.id === userToFollow.id)).toBe(true);
+          expect(res.body.some((u: any) => u.id === userToFollow.id)).toBe(
+            true,
+          );
         });
     });
   });
@@ -216,4 +216,3 @@ describe('UsersController', () => {
     });
   });
 });
-

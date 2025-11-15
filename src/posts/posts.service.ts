@@ -97,7 +97,7 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    let userReaction = null;
+    let userReaction: string | null = null;
     if (userId) {
       const reaction = await this.prisma.postReaction.findUnique({
         where: {
@@ -107,7 +107,7 @@ export class PostsService {
           },
         },
       });
-      userReaction = reaction?.type || null;
+      userReaction = reaction?.type ?? null;
     }
 
     return {
@@ -118,7 +118,11 @@ export class PostsService {
     };
   }
 
-  async create(userId: string, createPostDto: CreatePostDto, image?: Express.Multer.File) {
+  async create(
+    userId: string,
+    createPostDto: CreatePostDto,
+    image?: Express.Multer.File,
+  ) {
     // TODO: Upload image to S3/Cloudinary
     const imageUrl = image
       ? `/uploads/posts/${userId}-${Date.now()}.${image.originalname.split('.').pop()}`
@@ -158,7 +162,12 @@ export class PostsService {
     };
   }
 
-  async update(id: string, userId: string, updatePostDto: UpdatePostDto, image?: Express.Multer.File) {
+  async update(
+    id: string,
+    userId: string,
+    updatePostDto: UpdatePostDto,
+    image?: Express.Multer.File,
+  ) {
     const post = await this.prisma.post.findUnique({
       where: { id },
     });
@@ -273,7 +282,11 @@ export class PostsService {
     return comments;
   }
 
-  async createComment(postId: string, userId: string, createCommentDto: CreateCommentDto) {
+  async createComment(
+    postId: string,
+    userId: string,
+    createCommentDto: CreateCommentDto,
+  ) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
     });
@@ -361,7 +374,11 @@ export class PostsService {
     return reactions;
   }
 
-  async createReaction(postId: string, userId: string, createReactionDto: CreateReactionDto) {
+  async createReaction(
+    postId: string,
+    userId: string,
+    createReactionDto: CreateReactionDto,
+  ) {
     const post = await this.prisma.post.findUnique({
       where: { id: postId },
     });
@@ -438,4 +455,3 @@ export class PostsService {
     });
   }
 }
-

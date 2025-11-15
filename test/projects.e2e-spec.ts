@@ -18,7 +18,9 @@ describe('Projects E2E Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     prisma = moduleFixture.get<PrismaService>(PrismaService);
 
     await app.init();
@@ -117,4 +119,3 @@ describe('Projects E2E Tests', () => {
     });
   });
 });
-

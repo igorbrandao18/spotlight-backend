@@ -104,7 +104,10 @@ export class ChatService {
     };
   }
 
-  async createOrGetChatRoom(userId: string, createChatRoomDto: CreateChatRoomDto) {
+  async createOrGetChatRoom(
+    userId: string,
+    createChatRoomDto: CreateChatRoomDto,
+  ) {
     // For 1-on-1 chat, check if room already exists
     if (createChatRoomDto.userId && !createChatRoomDto.isGroup) {
       const existingRoom = await this.prisma.chatRoom.findFirst({
@@ -189,7 +192,12 @@ export class ChatService {
     };
   }
 
-  async getMessages(roomId: string, userId: string, page: number = 0, size: number = 20) {
+  async getMessages(
+    roomId: string,
+    userId: string,
+    page: number = 0,
+    size: number = 20,
+  ) {
     // Verify user is member
     await this.getChatRoom(roomId, userId);
 
@@ -272,4 +280,3 @@ export class ChatService {
     };
   }
 }
-

@@ -97,12 +97,17 @@ export class PortfolioService {
     };
   }
 
-  async create(userId: string, createDto: CreatePortfolioItemDto, files?: Express.Multer.File[]) {
+  async create(
+    userId: string,
+    createDto: CreatePortfolioItemDto,
+    files?: Express.Multer.File[],
+  ) {
     // TODO: Upload files to S3/Cloudinary
-    const mediaUrls = files?.map((file, index) => ({
-      url: `/uploads/portfolio/${userId}-${Date.now()}-${index}.${file.originalname.split('.').pop()}`,
-      type: this.getFileType(file.mimetype),
-    })) || [];
+    const mediaUrls =
+      files?.map((file, index) => ({
+        url: `/uploads/portfolio/${userId}-${Date.now()}-${index}.${file.originalname.split('.').pop()}`,
+        type: this.getFileType(file.mimetype),
+      })) || [];
 
     const item = await this.prisma.portfolioItem.create({
       data: {
@@ -135,7 +140,12 @@ export class PortfolioService {
     };
   }
 
-  async update(id: string, userId: string, updateDto: UpdatePortfolioItemDto, files?: Express.Multer.File[]) {
+  async update(
+    id: string,
+    userId: string,
+    updateDto: UpdatePortfolioItemDto,
+    files?: Express.Multer.File[],
+  ) {
     const item = await this.prisma.portfolioItem.findUnique({
       where: { id },
     });
@@ -145,14 +155,17 @@ export class PortfolioService {
     }
 
     if (item.userId !== userId) {
-      throw new ForbiddenException('You can only update your own portfolio items');
+      throw new ForbiddenException(
+        'You can only update your own portfolio items',
+      );
     }
 
     // TODO: Upload files to S3/Cloudinary
-    const mediaUrls = files?.map((file, index) => ({
-      url: `/uploads/portfolio/${userId}-${Date.now()}-${index}.${file.originalname.split('.').pop()}`,
-      type: this.getFileType(file.mimetype),
-    })) || [];
+    const mediaUrls =
+      files?.map((file, index) => ({
+        url: `/uploads/portfolio/${userId}-${Date.now()}-${index}.${file.originalname.split('.').pop()}`,
+        type: this.getFileType(file.mimetype),
+      })) || [];
 
     const updatedItem = await this.prisma.portfolioItem.update({
       where: { id },
@@ -197,7 +210,9 @@ export class PortfolioService {
     }
 
     if (item.userId !== userId) {
-      throw new ForbiddenException('You can only delete your own portfolio items');
+      throw new ForbiddenException(
+        'You can only delete your own portfolio items',
+      );
     }
 
     await this.prisma.portfolioItem.delete({
@@ -368,7 +383,11 @@ export class PortfolioService {
     };
   }
 
-  async createComment(itemId: string, userId: string, createDto: CreatePortfolioCommentDto) {
+  async createComment(
+    itemId: string,
+    userId: string,
+    createDto: CreatePortfolioCommentDto,
+  ) {
     const item = await this.prisma.portfolioItem.findUnique({
       where: { id: itemId },
     });
@@ -419,7 +438,13 @@ export class PortfolioService {
     };
   }
 
-  async updateComment(itemId: string, commentId: string, userId: string, content: string, parentId?: string) {
+  async updateComment(
+    itemId: string,
+    commentId: string,
+    userId: string,
+    content: string,
+    parentId?: string,
+  ) {
     const comment = await this.prisma.portfolioComment.findUnique({
       where: { id: commentId },
     });
@@ -459,12 +484,12 @@ export class PortfolioService {
     });
   }
 
-  async likeComment(itemId: string, commentId: string) {
+  async likeComment(_itemId: string, _commentId: string) {
     // TODO: Implement comment likes
     // This would require a PortfolioCommentLike table
   }
 
-  async unlikeComment(itemId: string, commentId: string) {
+  async unlikeComment(_itemId: string, _commentId: string) {
     // TODO: Implement comment unlikes
   }
 
@@ -475,4 +500,3 @@ export class PortfolioService {
     return 'DESIGN';
   }
 }
-

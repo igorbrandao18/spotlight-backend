@@ -1,19 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { PartnerStoresController } from './partner-stores.controller';
-import { PartnerStoresService } from './partner-stores.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
-import { PrismaService } from '../prisma/prisma.service';
 
 describe('PartnerStoresController', () => {
   let app: INestApplication;
-  let controller: PartnerStoresController;
-  let service: PartnerStoresService;
-  let prisma: PrismaService;
   let adminToken: string;
-  let adminId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -21,12 +14,10 @@ describe('PartnerStoresController', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
-
-    controller = moduleFixture.get<PartnerStoresController>(PartnerStoresController);
-    service = moduleFixture.get<PartnerStoresService>(PartnerStoresService);
-    prisma = moduleFixture.get<PrismaService>(PrismaService);
   });
 
   afterAll(async () => {
@@ -38,7 +29,6 @@ describe('PartnerStoresController', () => {
     await TestHelpers.cleanup();
 
     const admin = await TestHelpers.createUser({ role: 'ADMIN' });
-    adminId = admin.id;
 
     const loginResponse = await request(app.getHttpServer())
       .post('/api/auth/login')
@@ -176,4 +166,3 @@ describe('PartnerStoresController', () => {
     });
   });
 });
-

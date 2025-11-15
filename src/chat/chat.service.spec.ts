@@ -7,7 +7,6 @@ import { NotFoundException } from '@nestjs/common';
 
 describe('ChatService', () => {
   let service: ChatService;
-  let prisma: PrismaService;
   let module: TestingModule;
 
   beforeAll(async () => {
@@ -37,10 +36,7 @@ describe('ChatService', () => {
         data: {
           isGroup: false,
           members: {
-            create: [
-              { userId: user1.id },
-              { userId: user2.id },
-            ],
+            create: [{ userId: user1.id }, { userId: user2.id }],
           },
         },
       });
@@ -61,10 +57,7 @@ describe('ChatService', () => {
         data: {
           isGroup: false,
           members: {
-            create: [
-              { userId: user1.id },
-              { userId: user2.id },
-            ],
+            create: [{ userId: user1.id }, { userId: user2.id }],
           },
         },
       });
@@ -78,7 +71,9 @@ describe('ChatService', () => {
     it('should throw NotFoundException if room not found', async () => {
       const user = await TestHelpers.createUser();
 
-      await expect(service.findOneRoom(user.id, 'invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOneRoom(user.id, 'invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -122,10 +117,7 @@ describe('ChatService', () => {
         data: {
           isGroup: false,
           members: {
-            create: [
-              { userId: user1.id },
-              { userId: user2.id },
-            ],
+            create: [{ userId: user1.id }, { userId: user2.id }],
           },
           messages: {
             create: [
@@ -136,7 +128,10 @@ describe('ChatService', () => {
         },
       });
 
-      const result = await service.getMessages(user1.id, room.id, { page: 0, size: 10 });
+      const result = await service.getMessages(user1.id, room.id, {
+        page: 0,
+        size: 10,
+      });
 
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThanOrEqual(2);
@@ -152,10 +147,7 @@ describe('ChatService', () => {
         data: {
           isGroup: false,
           members: {
-            create: [
-              { userId: user1.id },
-              { userId: user2.id },
-            ],
+            create: [{ userId: user1.id }, { userId: user2.id }],
           },
         },
       });
@@ -178,4 +170,3 @@ describe('ChatService', () => {
     });
   });
 });
-

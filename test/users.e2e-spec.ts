@@ -17,7 +17,9 @@ describe('Users E2E Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     prisma = moduleFixture.get<PrismaService>(PrismaService);
 
     await app.init();
@@ -96,7 +98,9 @@ describe('Users E2E Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(followedResponse.body.some((u: any) => u.id === userToFollow.id)).toBe(true);
+      expect(
+        followedResponse.body.some((u: any) => u.id === userToFollow.id),
+      ).toBe(true);
 
       // 3. Get public profile
       const publicProfileResponse = await request(app.getHttpServer())
@@ -119,7 +123,9 @@ describe('Users E2E Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200);
 
-      expect(followedAfterUnfollow.body.some((u: any) => u.id === userToFollow.id)).toBe(false);
+      expect(
+        followedAfterUnfollow.body.some((u: any) => u.id === userToFollow.id),
+      ).toBe(false);
     });
   });
 
@@ -157,9 +163,12 @@ describe('Users E2E Tests', () => {
         .expect(200);
 
       expect(followersResponse.body.length).toBeGreaterThanOrEqual(2);
-      expect(followersResponse.body.some((u: any) => u.id === follower1.id)).toBe(true);
-      expect(followersResponse.body.some((u: any) => u.id === follower2.id)).toBe(true);
+      expect(
+        followersResponse.body.some((u: any) => u.id === follower1.id),
+      ).toBe(true);
+      expect(
+        followersResponse.body.some((u: any) => u.id === follower2.id),
+      ).toBe(true);
     });
   });
 });
-

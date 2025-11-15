@@ -18,7 +18,9 @@ describe('Portfolio E2E Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     prisma = moduleFixture.get<PrismaService>(PrismaService);
 
     await app.init();
@@ -131,7 +133,9 @@ describe('Portfolio E2E Tests', () => {
         .expect(200);
 
       expect(Array.isArray(listResponse.body)).toBe(true);
-      expect(listResponse.body.some((item: any) => item.id === itemId)).toBe(true);
+      expect(listResponse.body.some((item: any) => item.id === itemId)).toBe(
+        true,
+      );
 
       // 10. Unlike item
       await request(app.getHttpServer())
@@ -147,4 +151,3 @@ describe('Portfolio E2E Tests', () => {
     });
   });
 });
-

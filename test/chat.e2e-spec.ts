@@ -19,7 +19,9 @@ describe('Chat E2E Tests', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     prisma = moduleFixture.get<PrismaService>(PrismaService);
 
     await app.init();
@@ -100,8 +102,12 @@ describe('Chat E2E Tests', () => {
         .expect(200);
 
       expect(messagesResponse.body.length).toBeGreaterThanOrEqual(2);
-      expect(messagesResponse.body.some((m: any) => m.content.includes('Hello'))).toBe(true);
-      expect(messagesResponse.body.some((m: any) => m.content.includes('Hi'))).toBe(true);
+      expect(
+        messagesResponse.body.some((m: any) => m.content.includes('Hello')),
+      ).toBe(true);
+      expect(
+        messagesResponse.body.some((m: any) => m.content.includes('Hi')),
+      ).toBe(true);
 
       // 6. List all rooms for user1
       const roomsResponse = await request(app.getHttpServer())
@@ -128,4 +134,3 @@ describe('Chat E2E Tests', () => {
     });
   });
 });
-

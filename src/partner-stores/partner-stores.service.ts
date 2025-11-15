@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePartnerStoreDto } from './dto/create-partner-store.dto';
 import { CreateEquipmentDto } from './dto/create-equipment.dto';
@@ -84,7 +79,11 @@ export class PartnerStoresService {
     };
   }
 
-  async create(createDto: CreatePartnerStoreDto, logo?: Express.Multer.File, coverImage?: Express.Multer.File) {
+  async create(
+    createDto: CreatePartnerStoreDto,
+    logo?: Express.Multer.File,
+    coverImage?: Express.Multer.File,
+  ) {
     // TODO: Upload images to S3/Cloudinary
     const logoUrl = logo
       ? `/uploads/stores/logo-${Date.now()}.${logo.originalname.split('.').pop()}`
@@ -106,22 +105,29 @@ export class PartnerStoresService {
       },
     });
 
-    return [{
-      id: store.id,
-      name: store.name,
-      description: store.description,
-      logo: store.logo,
-      coverImage: store.coverImage,
-      website: store.website,
-      email: store.email,
-      phone: store.phone,
-      address: store.address,
-      createdAt: store.createdAt.toISOString(),
-      updatedAt: store.updatedAt.toISOString(),
-    }];
+    return [
+      {
+        id: store.id,
+        name: store.name,
+        description: store.description,
+        logo: store.logo,
+        coverImage: store.coverImage,
+        website: store.website,
+        email: store.email,
+        phone: store.phone,
+        address: store.address,
+        createdAt: store.createdAt.toISOString(),
+        updatedAt: store.updatedAt.toISOString(),
+      },
+    ];
   }
 
-  async update(id: string, updateDto: Partial<CreatePartnerStoreDto>, logo?: Express.Multer.File, coverImage?: Express.Multer.File) {
+  async update(
+    id: string,
+    updateDto: Partial<CreatePartnerStoreDto>,
+    logo?: Express.Multer.File,
+    coverImage?: Express.Multer.File,
+  ) {
     const store = await this.prisma.partnerStore.findUnique({
       where: { id },
     });
@@ -152,19 +158,21 @@ export class PartnerStoresService {
       },
     });
 
-    return [{
-      id: updatedStore.id,
-      name: updatedStore.name,
-      description: updatedStore.description,
-      logo: updatedStore.logo,
-      coverImage: updatedStore.coverImage,
-      website: updatedStore.website,
-      email: updatedStore.email,
-      phone: updatedStore.phone,
-      address: updatedStore.address,
-      createdAt: updatedStore.createdAt.toISOString(),
-      updatedAt: updatedStore.updatedAt.toISOString(),
-    }];
+    return [
+      {
+        id: updatedStore.id,
+        name: updatedStore.name,
+        description: updatedStore.description,
+        logo: updatedStore.logo,
+        coverImage: updatedStore.coverImage,
+        website: updatedStore.website,
+        email: updatedStore.email,
+        phone: updatedStore.phone,
+        address: updatedStore.address,
+        createdAt: updatedStore.createdAt.toISOString(),
+        updatedAt: updatedStore.updatedAt.toISOString(),
+      },
+    ];
   }
 
   async remove(id: string) {
@@ -181,7 +189,11 @@ export class PartnerStoresService {
     });
   }
 
-  async uploadStoreImages(id: string, logo?: Express.Multer.File, coverImage?: Express.Multer.File) {
+  async uploadStoreImages(
+    id: string,
+    logo?: Express.Multer.File,
+    coverImage?: Express.Multer.File,
+  ) {
     const store = await this.prisma.partnerStore.findUnique({
       where: { id },
     });
@@ -284,7 +296,10 @@ export class PartnerStoresService {
     };
   }
 
-  async createEquipment(createDto: CreateEquipmentDto, files?: Express.Multer.File[]) {
+  async createEquipment(
+    createDto: CreateEquipmentDto,
+    files?: Express.Multer.File[],
+  ) {
     const store = await this.prisma.partnerStore.findUnique({
       where: { id: createDto.partnerStoreId },
     });
@@ -294,10 +309,11 @@ export class PartnerStoresService {
     }
 
     // TODO: Upload files to S3/Cloudinary
-    const imageKeys = files?.map((file, index) => ({
-      url: `/uploads/equipment/${createDto.partnerStoreId}-${Date.now()}-${index}.${file.originalname.split('.').pop()}`,
-      key: `equipment-${createDto.partnerStoreId}-${Date.now()}-${index}`,
-    })) || [];
+    const imageKeys =
+      files?.map((file, index) => ({
+        url: `/uploads/equipment/${createDto.partnerStoreId}-${Date.now()}-${index}.${file.originalname.split('.').pop()}`,
+        key: `equipment-${createDto.partnerStoreId}-${Date.now()}-${index}`,
+      })) || [];
 
     const equipment = await this.prisma.partnerStoreEquipment.create({
       data: {
@@ -315,19 +331,21 @@ export class PartnerStoresService {
       },
     });
 
-    return [{
-      id: equipment.id,
-      name: equipment.name,
-      description: equipment.description,
-      price: equipment.price,
-      category: equipment.category,
-      partnerStoreId: equipment.partnerStoreId,
-      images: equipment.images.map((img) => ({
-        id: img.id,
-        url: img.url,
-        key: img.key,
-      })),
-    }];
+    return [
+      {
+        id: equipment.id,
+        name: equipment.name,
+        description: equipment.description,
+        price: equipment.price,
+        category: equipment.category,
+        partnerStoreId: equipment.partnerStoreId,
+        images: equipment.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+          key: img.key,
+        })),
+      },
+    ];
   }
 
   async updateEquipment(id: string, updateDto: Partial<CreateEquipmentDto>) {
@@ -421,4 +439,3 @@ export class PartnerStoresService {
     });
   }
 }
-

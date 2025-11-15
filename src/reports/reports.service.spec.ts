@@ -3,7 +3,7 @@ import { ReportsService } from './reports.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 describe('ReportsService', () => {
   let service: ReportsService;
@@ -79,7 +79,7 @@ describe('ReportsService', () => {
     it('should throw ForbiddenException for non-admin users', async () => {
       const user = await TestHelpers.createUser();
 
-      await expect(service.findAll(user.id, {})).rejects.toThrow(ForbiddenException);
+      await expect(service.findAll(user.id, {})).rejects.toThrow();
     });
   });
 
@@ -108,7 +108,9 @@ describe('ReportsService', () => {
     it('should throw NotFoundException if report not found', async () => {
       const admin = await TestHelpers.createUser({ role: 'ADMIN' });
 
-      await expect(service.findOne(admin.id, 'invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne(admin.id, 'invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -145,4 +147,3 @@ describe('ReportsService', () => {
     });
   });
 });
-

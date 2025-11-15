@@ -3,7 +3,7 @@ import { PortfolioService } from './portfolio.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 describe('PortfolioService', () => {
   let service: PortfolioService;
@@ -92,7 +92,9 @@ describe('PortfolioService', () => {
     });
 
     it('should throw NotFoundException if item not found', async () => {
-      await expect(service.findOne('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -130,7 +132,9 @@ describe('PortfolioService', () => {
         },
       });
 
-      await expect(service.update(otherUser.id, item.id, { title: 'test' })).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.update(otherUser.id, item.id, { title: 'test' }),
+      ).rejects.toThrow('ForbiddenException');
     });
   });
 
@@ -175,7 +179,11 @@ describe('PortfolioService', () => {
         content: 'This is a comment',
       };
 
-      const result = await service.createComment(item.id, commenter.id, commentDto);
+      const result = await service.createComment(
+        item.id,
+        commenter.id,
+        commentDto,
+      );
 
       expect(result).toHaveProperty('id');
       expect(result.content).toBe(commentDto.content);
@@ -189,4 +197,3 @@ describe('PortfolioService', () => {
     });
   });
 });
-

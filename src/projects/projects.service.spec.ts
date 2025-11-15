@@ -3,7 +3,7 @@ import { ProjectsService } from './projects.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 describe('ProjectsService', () => {
   let service: ProjectsService;
@@ -78,7 +78,9 @@ describe('ProjectsService', () => {
     it('should throw NotFoundException if project not found', async () => {
       const user = await TestHelpers.createUser();
 
-      await expect(service.findOne(user.id, 'invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne(user.id, 'invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -106,7 +108,9 @@ describe('ProjectsService', () => {
       const otherUser = await TestHelpers.createUser();
       const project = await TestHelpers.createProject(owner.id);
 
-      await expect(service.update(otherUser.id, project.id, { title: 'test' })).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.update(otherUser.id, project.id, { title: 'test' }),
+      ).rejects.toThrow('ForbiddenException');
     });
   });
 
@@ -121,7 +125,11 @@ describe('ProjectsService', () => {
         role: 'MEMBER',
       };
 
-      const result = await service.addMember(owner.id, project.id, addMemberDto);
+      const result = await service.addMember(
+        owner.id,
+        project.id,
+        addMemberDto,
+      );
 
       expect(result).toHaveProperty('userId', member.id);
 
@@ -148,7 +156,11 @@ describe('ProjectsService', () => {
         status: 'TODO',
       };
 
-      const result = await service.createMilestone(owner.id, project.id, milestoneDto);
+      const result = await service.createMilestone(
+        owner.id,
+        project.id,
+        milestoneDto,
+      );
 
       expect(result).toHaveProperty('id');
       expect(result.title).toBe(milestoneDto.title);
@@ -161,4 +173,3 @@ describe('ProjectsService', () => {
     });
   });
 });
-

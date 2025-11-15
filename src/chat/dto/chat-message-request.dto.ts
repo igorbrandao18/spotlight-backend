@@ -14,4 +14,3 @@ export class ChatMessageRequestDto {
   @IsEnum(MessageType)
   type?: MessageType;
 }
-

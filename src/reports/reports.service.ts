@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
@@ -67,11 +63,15 @@ export class ReportsService {
 
   async create(userId: string, createDto: CreateReportDto) {
     // Validate that at least one reported entity is provided
-    if (!createDto.reportedUserId && !createDto.reportedProjectId && !createDto.reportedPortfolioItemId) {
+    if (
+      !createDto.reportedUserId &&
+      !createDto.reportedProjectId &&
+      !createDto.reportedPortfolioItemId
+    ) {
       throw new Error('At least one reported entity must be provided');
     }
 
-    const report = await this.prisma.report.create({
+    await this.prisma.report.create({
       data: {
         reason: createDto.reason,
         category: createDto.category,
@@ -124,4 +124,3 @@ export class ReportsService {
     return updatedReport;
   }
 }
-

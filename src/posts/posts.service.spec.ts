@@ -3,7 +3,7 @@ import { PostsService } from './posts.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppModule } from '../app.module';
 import { TestHelpers } from '../../test/helpers/test-helpers';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 
 describe('PostsService', () => {
   let service: PostsService;
@@ -75,7 +75,9 @@ describe('PostsService', () => {
     });
 
     it('should throw NotFoundException if post not found', async () => {
-      await expect(service.findOne('invalid-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('invalid-id')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -101,7 +103,9 @@ describe('PostsService', () => {
     it('should throw NotFoundException if post not found', async () => {
       const user = await TestHelpers.createUser();
 
-      await expect(service.update(user.id, 'invalid-id', { content: 'test' })).rejects.toThrow(NotFoundException);
+      await expect(
+        service.update(user.id, 'invalid-id', { content: 'test' }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ForbiddenException if user is not author', async () => {
@@ -109,7 +113,9 @@ describe('PostsService', () => {
       const otherUser = await TestHelpers.createUser();
       const post = await TestHelpers.createPost(author.id);
 
-      await expect(service.update(otherUser.id, post.id, { content: 'test' })).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.update(otherUser.id, post.id, { content: 'test' }),
+      ).rejects.toThrow('ForbiddenException');
     });
   });
 
@@ -131,7 +137,9 @@ describe('PostsService', () => {
       const otherUser = await TestHelpers.createUser();
       const post = await TestHelpers.createPost(author.id);
 
-      await expect(service.remove(otherUser.id, post.id)).rejects.toThrow(ForbiddenException);
+      await expect(service.remove(otherUser.id, post.id)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -145,7 +153,11 @@ describe('PostsService', () => {
         content: 'This is a comment',
       };
 
-      const result = await service.createComment(commenter.id, post.id, commentDto);
+      const result = await service.createComment(
+        commenter.id,
+        post.id,
+        commentDto,
+      );
 
       expect(result).toHaveProperty('id');
       expect(result.content).toBe(commentDto.content);
@@ -176,7 +188,11 @@ describe('PostsService', () => {
         parentId: parentComment.id,
       };
 
-      const result = await service.createComment(commenter.id, post.id, commentDto);
+      const result = await service.createComment(
+        commenter.id,
+        post.id,
+        commentDto,
+      );
 
       expect(result.parentId).toBe(parentComment.id);
     });
@@ -192,7 +208,11 @@ describe('PostsService', () => {
         type: 'LIKE',
       };
 
-      const result = await service.createReaction(reactor.id, post.id, reactionDto);
+      const result = await service.createReaction(
+        reactor.id,
+        post.id,
+        reactionDto,
+      );
 
       expect(result).toHaveProperty('type', 'LIKE');
 
@@ -213,10 +233,11 @@ describe('PostsService', () => {
       const post = await TestHelpers.createPost(author.id);
 
       await service.createReaction(reactor.id, post.id, { type: 'LIKE' });
-      const result = await service.createReaction(reactor.id, post.id, { type: 'LOVE' });
+      const result = await service.createReaction(reactor.id, post.id, {
+        type: 'LOVE',
+      });
 
       expect(result.type).toBe('LOVE');
     });
   });
 });
-

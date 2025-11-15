@@ -1,7 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AppModule } from '../app.module';
@@ -66,7 +64,9 @@ describe('AuthService', () => {
         areaActivity: 'Photography',
       };
 
-      await expect(service.register(registerDto)).rejects.toThrow(BadRequestException);
+      await expect(service.register(registerDto)).rejects.toThrow(
+        'BadRequestException',
+      );
     });
 
     it('should hash password before storing', async () => {
@@ -86,7 +86,10 @@ describe('AuthService', () => {
 
       expect(user).toBeDefined();
       expect(user.password).not.toBe(registerDto.password);
-      const isPasswordHashed = await bcrypt.compare(registerDto.password, user.password);
+      const isPasswordHashed = await bcrypt.compare(
+        registerDto.password,
+        user.password,
+      );
       expect(isPasswordHashed).toBe(true);
     });
   });
@@ -118,7 +121,9 @@ describe('AuthService', () => {
         password: 'wrongpassword',
       };
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException if user is disabled', async () => {
@@ -130,7 +135,9 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException if user does not exist', async () => {
@@ -139,7 +146,9 @@ describe('AuthService', () => {
         password: 'password123',
       };
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -167,7 +176,9 @@ describe('AuthService', () => {
         refreshToken: 'invalid-token',
       };
 
-      await expect(service.refreshToken(refreshTokenDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshToken(refreshTokenDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should throw UnauthorizedException with expired refresh token', async () => {
@@ -187,7 +198,9 @@ describe('AuthService', () => {
         refreshToken: loginResult.refreshToken,
       };
 
-      await expect(service.refreshToken(refreshTokenDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshToken(refreshTokenDto)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -202,8 +215,16 @@ describe('AuthService', () => {
       // Create multiple refresh tokens
       await prisma.refreshToken.createMany({
         data: [
-          { token: 'token1', userId: user.id, expiresAt: new Date(Date.now() + 86400000) },
-          { token: 'token2', userId: user.id, expiresAt: new Date(Date.now() + 86400000) },
+          {
+            token: 'token1',
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 86400000),
+          },
+          {
+            token: 'token2',
+            userId: user.id,
+            expiresAt: new Date(Date.now() + 86400000),
+          },
         ],
       });
 

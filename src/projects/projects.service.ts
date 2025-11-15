@@ -16,11 +16,11 @@ export class ProjectsService {
 
   async findAll(userId?: string, archived?: boolean) {
     const where: any = {};
-    
+
     if (userId) {
       where.ownerId = userId;
     }
-    
+
     if (archived !== undefined) {
       where.archived = archived;
     } else {
@@ -50,7 +50,7 @@ export class ProjectsService {
         },
         milestones: {
           orderBy: {
-            order: 'asc',
+            createdAt: 'asc',
           },
         },
         _count: {
@@ -97,7 +97,7 @@ export class ProjectsService {
         },
         milestones: {
           orderBy: {
-            order: 'asc',
+            createdAt: 'asc',
           },
         },
       },
@@ -141,7 +141,7 @@ export class ProjectsService {
         },
         milestones: {
           orderBy: {
-            order: 'asc',
+            createdAt: 'asc',
           },
         },
       },
@@ -153,7 +153,11 @@ export class ProjectsService {
     return projects;
   }
 
-  async create(userId: string, createProjectDto: CreateProjectDto, file?: Express.Multer.File) {
+  async create(
+    userId: string,
+    createProjectDto: CreateProjectDto,
+    file?: Express.Multer.File,
+  ) {
     const { members, milestones, file: _, ...projectData } = createProjectDto;
 
     // TODO: Upload image to S3/Cloudinary
@@ -212,7 +216,7 @@ export class ProjectsService {
         },
         milestones: {
           orderBy: {
-            order: 'asc',
+            createdAt: 'asc',
           },
         },
       },
@@ -221,7 +225,12 @@ export class ProjectsService {
     return project;
   }
 
-  async update(id: string, userId: string, updateProjectDto: UpdateProjectDto, file?: Express.Multer.File) {
+  async update(
+    id: string,
+    userId: string,
+    updateProjectDto: UpdateProjectDto,
+    file?: Express.Multer.File,
+  ) {
     const project = await this.prisma.project.findUnique({
       where: { id },
       include: {
@@ -239,7 +248,9 @@ export class ProjectsService {
     const isAdmin = member?.role === 'ADMIN' || member?.role === 'OWNER';
 
     if (!isOwner && !isAdmin) {
-      throw new ForbiddenException('You do not have permission to update this project');
+      throw new ForbiddenException(
+        'You do not have permission to update this project',
+      );
     }
 
     const { members, milestones, file: _, ...projectData } = updateProjectDto;
@@ -276,7 +287,7 @@ export class ProjectsService {
         },
         milestones: {
           orderBy: {
-            order: 'asc',
+            createdAt: 'asc',
           },
         },
       },
@@ -347,7 +358,11 @@ export class ProjectsService {
     return members;
   }
 
-  async addMember(projectId: string, userId: string, addMemberDto: AddMemberDto) {
+  async addMember(
+    projectId: string,
+    userId: string,
+    addMemberDto: AddMemberDto,
+  ) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -369,7 +384,9 @@ export class ProjectsService {
     }
 
     // Check if user is already a member
-    const existingMember = project.members.find((m) => m.userId === addMemberDto.userId);
+    const existingMember = project.members.find(
+      (m) => m.userId === addMemberDto.userId,
+    );
     if (existingMember) {
       throw new BadRequestException('User is already a member of this project');
     }
@@ -394,7 +411,7 @@ export class ProjectsService {
     return newMember;
   }
 
-  async removeMember(projectId: string, memberId: number, userId: string) {
+  async removeMember(projectId: string, memberId: string, userId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -417,7 +434,9 @@ export class ProjectsService {
     const isAdmin = member?.role === 'ADMIN' || member?.role === 'OWNER';
 
     if (!isOwner && !isAdmin) {
-      throw new ForbiddenException('You do not have permission to remove members');
+      throw new ForbiddenException(
+        'You do not have permission to remove members',
+      );
     }
 
     // Prevent removing owner
@@ -442,14 +461,18 @@ export class ProjectsService {
     const milestones = await this.prisma.projectMilestone.findMany({
       where: { projectId },
       orderBy: {
-        order: 'asc',
+        createdAt: 'asc',
       },
     });
 
     return milestones;
   }
 
-  async createMilestone(projectId: string, userId: string, createMilestoneDto: CreateMilestoneDto) {
+  async createMilestone(
+    projectId: string,
+    userId: string,
+    createMilestoneDto: CreateMilestoneDto,
+  ) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -467,23 +490,21 @@ export class ProjectsService {
     const isAdmin = member?.role === 'ADMIN' || member?.role === 'OWNER';
 
     if (!isOwner && !isAdmin) {
-      throw new ForbiddenException('You do not have permission to create milestones');
+      throw new ForbiddenException(
+        'You do not have permission to create milestones',
+      );
     }
 
-    // Get max order
-    const maxOrder = await this.prisma.projectMilestone.aggregate({
-      where: { projectId },
-      _max: { order: true },
-    });
 
     const milestone = await this.prisma.projectMilestone.create({
       data: {
         projectId,
         title: createMilestoneDto.title,
         description: createMilestoneDto.description,
-        dueDate: createMilestoneDto.dueDate ? new Date(createMilestoneDto.dueDate) : null,
+        dueDate: createMilestoneDto.dueDate
+          ? new Date(createMilestoneDto.dueDate)
+          : null,
         status: createMilestoneDto.status || 'TODO',
-        order: createMilestoneDto.order ?? (maxOrder._max.order ?? -1) + 1,
       },
     });
 
@@ -492,7 +513,7 @@ export class ProjectsService {
 
   async updateMilestone(
     projectId: string,
-    milestoneId: number,
+    milestoneId: string,
     userId: string,
     updateMilestoneDto: Partial<CreateMilestoneDto>,
   ) {
@@ -521,7 +542,9 @@ export class ProjectsService {
     const isAdmin = member?.role === 'ADMIN' || member?.role === 'OWNER';
 
     if (!isOwner && !isAdmin) {
-      throw new ForbiddenException('You do not have permission to update milestones');
+      throw new ForbiddenException(
+        'You do not have permission to update milestones',
+      );
     }
 
     const updatedMilestone = await this.prisma.projectMilestone.update({
@@ -529,16 +552,21 @@ export class ProjectsService {
       data: {
         title: updateMilestoneDto.title,
         description: updateMilestoneDto.description,
-        dueDate: updateMilestoneDto.dueDate ? new Date(updateMilestoneDto.dueDate) : undefined,
+        dueDate: updateMilestoneDto.dueDate
+          ? new Date(updateMilestoneDto.dueDate)
+          : undefined,
         status: updateMilestoneDto.status,
-        order: updateMilestoneDto.order,
       },
     });
 
     return updatedMilestone;
   }
 
-  async deleteMilestone(projectId: string, milestoneId: number, userId: string) {
+  async deleteMilestone(
+    projectId: string,
+    milestoneId: string,
+    userId: string,
+  ) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -564,7 +592,9 @@ export class ProjectsService {
     const isAdmin = member?.role === 'ADMIN' || member?.role === 'OWNER';
 
     if (!isOwner && !isAdmin) {
-      throw new ForbiddenException('You do not have permission to delete milestones');
+      throw new ForbiddenException(
+        'You do not have permission to delete milestones',
+      );
     }
 
     await this.prisma.projectMilestone.delete({
@@ -572,7 +602,11 @@ export class ProjectsService {
     });
   }
 
-  async uploadImage(projectId: string, userId: string, file: Express.Multer.File) {
+  async uploadImage(
+    projectId: string,
+    userId: string,
+    file: Express.Multer.File,
+  ) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
     });
@@ -582,7 +616,9 @@ export class ProjectsService {
     }
 
     if (project.ownerId !== userId) {
-      throw new ForbiddenException('You can only upload images to your own projects');
+      throw new ForbiddenException(
+        'You can only upload images to your own projects',
+      );
     }
 
     // TODO: Upload image to S3/Cloudinary
@@ -612,7 +648,7 @@ export class ProjectsService {
         },
         milestones: {
           orderBy: {
-            order: 'asc',
+            createdAt: 'asc',
           },
         },
       },
@@ -621,4 +657,3 @@ export class ProjectsService {
     return updatedProject;
   }
 }
-

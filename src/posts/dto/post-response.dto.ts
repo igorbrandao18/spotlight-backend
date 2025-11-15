@@ -17,4 +17,3 @@ export class PostResponseDto {
   commentsCount?: number;
   reactionsCount?: number;
 }
-

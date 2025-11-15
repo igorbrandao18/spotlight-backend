@@ -35,7 +35,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    const user = await this.prisma.user.create({
+    await this.prisma.user.create({
       data: {
         email: registerDto.email,
         name: registerDto.name,
@@ -44,7 +44,10 @@ export class AuthService {
       },
     });
 
-    return this.login({ email: registerDto.email, password: registerDto.password });
+    return this.login({
+      email: registerDto.email,
+      password: registerDto.password,
+    });
   }
 
   async login(loginDto: LoginDto) {
@@ -56,7 +59,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
@@ -107,7 +113,7 @@ export class AuthService {
     }
 
     // Generate reset token
-    const resetToken = uuidv4();
+    uuidv4(); // Token generated but not stored yet (TODO: implement storage)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
 
@@ -118,7 +124,7 @@ export class AuthService {
     return { message: 'If the email exists, a reset link has been sent' };
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+  resetPassword(_resetPasswordDto: ResetPasswordDto): { message: string } {
     // In a real app, you would validate the token from database
     // For now, this is a placeholder
     // TODO: Implement token validation
@@ -127,7 +133,9 @@ export class AuthService {
   }
 
   async updatePassword(userId: string, updatePasswordDto: UpdatePasswordDto) {
-    if (updatePasswordDto.newPassword !== updatePasswordDto.confirmNewPassword) {
+    if (
+      updatePasswordDto.newPassword !== updatePasswordDto.confirmNewPassword
+    ) {
       throw new BadRequestException('New passwords do not match');
     }
 
@@ -193,4 +201,3 @@ export class AuthService {
     };
   }
 }
-
