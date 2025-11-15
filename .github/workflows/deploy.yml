@@ -35,21 +35,17 @@ jobs:
             
             echo "🚀 Starting deployment..."
             
-            # Stop and remove all existing services
+            # Stop existing services (but keep directory)
             echo "⏹️  Stopping existing services..."
             cd ${{ env.DEPLOY_PATH }} 2>/dev/null || true
-            docker-compose down -v 2>/dev/null || true
-            pm2 stop all 2>/dev/null || true
-            pm2 delete all 2>/dev/null || true
+            docker-compose down 2>/dev/null || true
+            pm2 stop spotlight-backend 2>/dev/null || true
+            pm2 delete spotlight-backend 2>/dev/null || true
             pkill -f "node.*dist/main" 2>/dev/null || true
             pkill -f "nest start" 2>/dev/null || true
             
-            # Remove old deployment directory
-            echo "🗑️  Removing old deployment..."
-            rm -rf ${{ env.DEPLOY_PATH }}
-            
-            # Create fresh deployment directory
-            echo "📁 Creating deployment directory..."
+            # Create deployment directory if it doesn't exist
+            echo "📁 Ensuring deployment directory exists..."
             mkdir -p ${{ env.DEPLOY_PATH }}
             cd ${{ env.DEPLOY_PATH }}
             
@@ -97,12 +93,17 @@ jobs:
               npm install -g pm2
             fi
             
-            # Clone repository
-            echo "📥 Cloning repository..."
-            git clone https://github.com/${{ github.repository }}.git . || {
-              echo "⚠️  Repository already exists, pulling latest changes..."
-              git pull origin main
-            }
+            # Clone or update repository
+            echo "📥 Updating repository..."
+            if [ -d .git ]; then
+              echo "Repository exists, pulling latest changes..."
+              git fetch origin
+              git reset --hard origin/main
+              git clean -fd
+            else
+              echo "Cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git .
+            fi
             
             # Setup environment
             echo "⚙️  Setting up environment..."
