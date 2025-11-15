@@ -154,8 +154,10 @@ services:
       pnpm prisma generate &&
       echo 'Running migrations...' &&
       pnpm prisma migrate deploy &&
+      echo 'Building NestJS application...' &&
+      pnpm run build &&
       echo 'Starting application...' &&
-      pnpm run start:dev
+      pnpm run start:prod
       "
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api"]
