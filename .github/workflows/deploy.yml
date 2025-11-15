@@ -44,13 +44,13 @@ jobs:
           script: |
             echo "🚀 Starting deployment..."
             echo "⏹️  Stopping existing services..."
-            cd ${{ env.DEPLOY_PATH }} 2>/dev/null || true
-            docker-compose down 2>/dev/null || true
-            pm2 stop spotlight-backend 2>/dev/null || true
-            pm2 delete spotlight-backend 2>/dev/null || true
-            pkill -f "node.*dist/main" 2>/dev/null || true
-            pkill -f "nest start" 2>/dev/null || true
             mkdir -p ${{ env.DEPLOY_PATH }}
+            cd ${{ env.DEPLOY_PATH }} || exit 0
+            docker-compose down || true
+            pm2 stop spotlight-backend || true
+            pm2 delete spotlight-backend || true
+            pkill -f "node.*dist/main" || true
+            pkill -f "nest start" || true
             echo "✅ Services stopped, directory ready"
 
       - name: Install dependencies
