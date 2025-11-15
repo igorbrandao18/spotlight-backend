@@ -56,8 +56,6 @@ jobs:
             # Install system dependencies if needed
             echo "📥 Installing system dependencies..."
             export DEBIAN_FRONTEND=noninteractive
-            
-            # Update package list
             apt-get update -qq
             
             # Install Node.js if needed
