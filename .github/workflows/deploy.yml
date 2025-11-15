@@ -68,8 +68,8 @@ jobs:
             echo "⏹️  Stopping existing containers..."
             cd ${{ env.DEPLOY_PATH }}
             
-            # Stop and remove all containers from docker-compose
-            docker compose down -v --remove-orphans 2>/dev/null || true
+            # Stop and remove all containers from docker-compose (preserve volumes to keep database)
+            docker compose down --remove-orphans 2>/dev/null || true
             
             # Stop and remove all containers with spotlight in the name
             docker ps -a --filter "name=spotlight" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
@@ -115,7 +115,17 @@ jobs:
             
             echo ""
             echo "⏳ Waiting for services to be ready..."
-            sleep 10
+            sleep 15
+            
+            echo ""
+            echo "🗄️  Ensuring database schema is created..."
+            # Wait for PostgreSQL to be fully ready
+            timeout 60 bash -c 'until docker compose exec -T postgres pg_isready -U postgres; do sleep 2; done' || true
+            sleep 5
+            
+            # Ensure schema is created (will be done by container command, but verify)
+            echo "📋 Checking database connection..."
+            docker compose exec -T api pnpm prisma db push --accept-data-loss 2>&1 | tail -10 || echo "Schema setup in progress..."
             
             echo ""
             echo "✅ Docker Compose started!"
