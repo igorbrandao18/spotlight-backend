@@ -67,32 +67,25 @@ jobs:
           script: |
             echo "⏹️  Stopping existing containers..."
             cd ${{ env.DEPLOY_PATH }}
-            docker compose down 2>/dev/null || true
             
-            # Stop all containers that might be using ports we need
-            echo "Stopping containers on ports 8080, 9000, 9001, 1025, 1080..."
-            docker stop $(docker ps -q --filter "publish=8080") 2>/dev/null || true
-            docker stop $(docker ps -q --filter "publish=9000") 2>/dev/null || true
-            docker stop $(docker ps -q --filter "publish=9001") 2>/dev/null || true
-            docker stop $(docker ps -q --filter "publish=1025") 2>/dev/null || true
-            docker stop $(docker ps -q --filter "publish=1080") 2>/dev/null || true
+            # Stop and remove all containers from docker-compose
+            docker compose down -v --remove-orphans 2>/dev/null || true
             
-            # Remove stopped containers
-            docker rm $(docker ps -aq --filter "publish=8080") 2>/dev/null || true
-            docker rm $(docker ps -aq --filter "publish=9000") 2>/dev/null || true
-            docker rm $(docker ps -aq --filter "publish=9001") 2>/dev/null || true
-            docker rm $(docker ps -aq --filter "publish=1025") 2>/dev/null || true
-            docker rm $(docker ps -aq --filter "publish=1080") 2>/dev/null || true
+            # Stop and remove all containers with spotlight in the name
+            docker ps -a --filter "name=spotlight" --format "{{.Names}}" | xargs -r docker stop 2>/dev/null || true
+            docker ps -a --filter "name=spotlight" --format "{{.Names}}" | xargs -r docker rm 2>/dev/null || true
             
-            # Stop spotlight containers by name pattern
-            docker stop $(docker ps -q --filter "name=spotlight") 2>/dev/null || true
-            docker rm $(docker ps -aq --filter "name=spotlight") 2>/dev/null || true
-            
-            # Stop old containers by name pattern (minio_prod, maildev_prod, etc)
+            # Stop and remove old containers by exact names
             docker stop minio_prod maildev_prod postgres_db_spotlight_prod spotlight_api_prod 2>/dev/null || true
             docker rm minio_prod maildev_prod postgres_db_spotlight_prod spotlight_api_prod 2>/dev/null || true
             
-            echo "✅ All containers stopped"
+            # Stop containers using our ports
+            for port in 8080 9000 9001 1025 1080 5432 6379; do
+              docker ps --filter "publish=$port" --format "{{.ID}}" | xargs -r docker stop 2>/dev/null || true
+              docker ps -a --filter "publish=$port" --format "{{.ID}}" | xargs -r docker rm 2>/dev/null || true
+            done
+            
+            echo "✅ All containers stopped and removed"
 
       - name: Setup environment and start Docker Compose
         uses: appleboy/ssh-action@master
