@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -54,6 +55,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @Throttle({ long: { limit: 3, ttl: 3600000 } }) // 3 registrations per hour
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Register a new user',
@@ -104,6 +106,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @Throttle({ medium: { limit: 5, ttl: 900000 } }) // 5 login attempts per 15 minutes
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Authenticate user',
@@ -150,6 +153,7 @@ export class AuthController {
 
   @Public()
   @Post('refresh-token')
+  @Throttle({ short: { limit: 10, ttl: 60000 } }) // 10 refresh attempts per minute
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Refresh access token',
@@ -195,6 +199,7 @@ export class AuthController {
 
   @Public()
   @Post('forgot-password')
+  @Throttle({ long: { limit: 3, ttl: 3600000 } }) // 3 password reset requests per hour
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Request password reset',
@@ -229,6 +234,7 @@ export class AuthController {
 
   @Public()
   @Post('reset-password')
+  @Throttle({ long: { limit: 3, ttl: 3600000 } }) // 3 password resets per hour
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Reset password with token',

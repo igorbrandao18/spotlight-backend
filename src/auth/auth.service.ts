@@ -46,9 +46,10 @@ export class AuthService {
   ): Promise<AuthenticationResponse> {
     this.logger.log(`Registration attempt for email: ${registerDto.email}`);
 
-    // Check if user already exists
+    // Check if user already exists (optimized: only check email, no data loading)
     const existingUser = await this.prisma.user.findUnique({
       where: { email: registerDto.email.toLowerCase().trim() },
+      select: { id: true }, // Only select id to minimize data transfer
     });
 
     if (existingUser) {
@@ -127,6 +128,7 @@ export class AuthService {
   ): Promise<AuthenticationResponse> {
     this.logger.log(`Login attempt for email: ${loginDto.email}`);
 
+    // Optimized query: only fetch necessary fields and check for existing refresh token
     const user = await this.prisma.user.findUnique({
       where: { email: loginDto.email.toLowerCase().trim() },
       select: {
@@ -143,8 +145,17 @@ export class AuthService {
         isVerified: true,
         createdAt: true,
         refreshTokens: {
+          where: {
+            expiresAt: {
+              gt: new Date(), // Only get non-expired tokens
+            },
+          },
           orderBy: { createdAt: 'desc' },
           take: 1,
+          select: {
+            id: true,
+            expiresAt: true,
+          },
         },
       },
     });

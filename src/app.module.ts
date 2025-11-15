@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from './config/config.module';
@@ -18,6 +19,24 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
   imports: [
     ConfigModule,
     PrismaModule,
+    // Rate limiting configuration
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 60000, // 1 minute
+        limit: 100, // 100 requests per minute (general API)
+      },
+      {
+        name: 'medium',
+        ttl: 900000, // 15 minutes
+        limit: 5, // 5 requests per 15 minutes (login attempts)
+      },
+      {
+        name: 'long',
+        ttl: 3600000, // 1 hour
+        limit: 3, // 3 requests per hour (registration, password reset)
+      },
+    ]),
     AuthModule,
     UsersModule,
     PostsModule,
@@ -33,6 +52,10 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })

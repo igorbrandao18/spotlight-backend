@@ -12,68 +12,73 @@ datasource db {
 
 // User Model
 model User {
-  id                String   @id @default(uuid())
-  email             String   @unique
-  name              String
-  password          String
-  areaActivity      String?
-  role              String   @default("USER")
-  title             String?
-  location          String?
-  isPro             Boolean  @default(false)
-  isVerified        Boolean  @default(false)
-  avatar            String?
-  coverImage        String?
-  bio               String?
-  shortBio          String?
-  specialties       String[]
-  website           String?
-  profileLevel      Int      @default(1)
-  resume            String?
-  chatAvailability  String   @default("OFFLINE") // AVAILABLE, BUSY, AWAY, OFFLINE
-  industry          String?
-  timeOfExperience  String?
-  notableClients    String?
-  whatsappNumber    String?
-  enabled           Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String   @id @default(uuid())
+  email            String   @unique
+  name             String
+  password         String
+  areaActivity     String?
+  role             String   @default("USER")
+  title            String?
+  location         String?
+  isPro            Boolean  @default(false)
+  isVerified       Boolean  @default(false)
+  avatar           String?
+  coverImage       String?
+  bio              String?
+  shortBio         String?
+  specialties      String[]
+  website          String?
+  profileLevel     Int      @default(1)
+  resume           String?
+  chatAvailability String   @default("OFFLINE") // AVAILABLE, BUSY, AWAY, OFFLINE
+  industry         String?
+  timeOfExperience String?
+  notableClients   String?
+  whatsappNumber   String?
+  enabled          Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relations
-  refreshTokens     RefreshToken[]
-  socialLinks       SocialLink[]
-  websites          Website[]
-  locations         Location[]
-  availability      Availability?
-  rates             Rate?
-  preferences       UserPreferences?
-  
+  refreshTokens RefreshToken[]
+  socialLinks   SocialLink[]
+  websites      Website[]
+  locations     Location[]
+  availability  Availability?
+  rates         Rate?
+  preferences   UserPreferences?
+
   // Follow relations
-  followers         Follow[] @relation("Follower")
-  following         Follow[] @relation("Following")
-  
+  followers Follow[] @relation("Follower")
+  following Follow[] @relation("Following")
+
   // Posts
-  posts             Post[]
-  postComments      PostComment[]
-  postReactions     PostReaction[]
-  
+  posts         Post[]
+  postComments  PostComment[]
+  postReactions PostReaction[]
+
   // Projects
-  ownedProjects     Project[] @relation("ProjectOwner")
-  projectMembers    ProjectMember[]
-  
+  ownedProjects  Project[]       @relation("ProjectOwner")
+  projectMembers ProjectMember[]
+
   // Portfolio
   portfolioItems    PortfolioItem[]
   portfolioComments PortfolioComment[]
   portfolioLikes    PortfolioLike[]
-  
+
   // Chat
-  sentMessages      ChatMessage[] @relation("MessageSender")
-  chatRooms         ChatRoomMember[]
-  
+  sentMessages ChatMessage[]    @relation("MessageSender")
+  chatRooms    ChatRoomMember[]
+
   // Reports
-  reportedBy        Report[] @relation("Reporter")
-  reportedUser      Report[] @relation("ReportedUser")
-  
+  reportedBy   Report[] @relation("Reporter")
+  reportedUser Report[] @relation("ReportedUser")
+
+  // Indexes for performance optimization
+  @@index([name]) // For user search
+  @@index([enabled]) // For filtering active users
+  @@index([createdAt]) // For sorting by registration date
+  @@index([email]) // Additional index for email lookups (already unique, but helps with joins)
   @@map("users")
 }
 
@@ -84,9 +89,13 @@ model RefreshToken {
   userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes for performance optimization
+  @@index([userId]) // For finding user's refresh tokens
+  @@index([expiresAt]) // For cleaning expired tokens
+  @@index([token]) // Additional index for token lookups (already unique)
   @@map("refresh_tokens")
 }
 
@@ -96,9 +105,9 @@ model SocialLink {
   platform String
   url      String
   userId   String
-  
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("social_links")
 }
 
@@ -107,9 +116,9 @@ model Website {
   id     String @id @default(uuid())
   url    String
   userId String
-  
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("websites")
 }
 
@@ -118,9 +127,9 @@ model Location {
   id      String @id @default(uuid())
   address String
   userId  String
-  
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("locations")
 }
 
@@ -128,7 +137,7 @@ model Location {
 model Availability {
   id     String @id @default(uuid())
   userId String @unique
-  
+
   monday    String? // JSON string with time slots
   tuesday   String?
   wednesday String?
@@ -136,9 +145,9 @@ model Availability {
   friday    String?
   saturday  String?
   sunday    String?
-  
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("availabilities")
 }
 
@@ -146,15 +155,15 @@ model Availability {
 model Rate {
   id     String @id @default(uuid())
   userId String @unique
-  
+
   hourly   Float?
   daily    Float?
   weekly   Float?
   monthly  Float?
   currency String? @default("BRL")
-  
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("rates")
 }
 
@@ -162,14 +171,14 @@ model Rate {
 model UserPreferences {
   id     String @id @default(uuid())
   userId String @unique
-  
+
   notificationsEmail Boolean @default(true)
-  notificationsPush   Boolean @default(true)
-  language            String  @default("pt-BR")
-  theme               String  @default("light")
-  
-  user                User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  notificationsPush  Boolean @default(true)
+  language           String  @default("pt-BR")
+  theme              String  @default("light")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("user_preferences")
 }
 
@@ -179,11 +188,15 @@ model Follow {
   followerId  String
   followingId String
   createdAt   DateTime @default(now())
-  
-  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
-  
+
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
   @@unique([followerId, followingId])
+  // Indexes for performance optimization
+  @@index([followerId]) // For finding who a user follows
+  @@index([followingId]) // For finding who follows a user
+  @@index([createdAt]) // For sorting follows by date
   @@map("follows")
 }
 
@@ -199,11 +212,14 @@ model Post {
   authorId    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  author      User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments    PostComment[]
-  reactions   PostReaction[]
-  
+
+  author    User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  PostComment[]
+  reactions PostReaction[]
+
+  // Indexes for performance optimization
+  @@index([authorId, createdAt(sort: Desc)]) // For user's posts feed (most recent first)
+  @@index([createdAt(sort: Desc)]) // For global feed (most recent first)
   @@map("posts")
 }
 
@@ -213,30 +229,33 @@ model PostComment {
   content   String
   postId    String
   authorId  String
-  parentId  String?  // For nested comments
+  parentId  String? // For nested comments
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent    PostComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   PostComment[] @relation("CommentReplies")
-  
+
+  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  PostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies PostComment[] @relation("CommentReplies")
+
   @@map("post_comments")
 }
 
 // Post Reaction
 model PostReaction {
   id        String   @id @default(uuid())
-  type      String   // LIKE, LOVE, HAHA, WOW, SAD, ANGRY
+  type      String // LIKE, LOVE, HAHA, WOW, SAD, ANGRY
   postId    String
   userId    String
   createdAt DateTime @default(now())
-  
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([postId, userId])
+  // Indexes for performance optimization
+  @@index([postId]) // For finding all reactions on a post
+  @@index([userId]) // For finding user's reactions
   @@map("post_reactions")
 }
 
@@ -246,18 +265,22 @@ model Project {
   title       String
   description String?
   category    String?
-  priority    String?  // LOW, MEDIUM, HIGH
+  priority    String? // LOW, MEDIUM, HIGH
   status      String   @default("TODO") // TODO, IN_PROGRESS, DONE, ARCHIVED
   archived    Boolean  @default(false)
   image       String?
   ownerId     String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  owner       User            @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members     ProjectMember[]
-  milestones  ProjectMilestone[]
-  
+
+  owner      User               @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members    ProjectMember[]
+  milestones ProjectMilestone[]
+
+  // Indexes for performance optimization
+  @@index([ownerId, createdAt(sort: Desc)]) // For user's projects (most recent first)
+  @@index([status]) // For filtering by status
+  @@index([archived]) // For filtering archived projects
   @@map("projects")
 }
 
@@ -268,27 +291,27 @@ model ProjectMember {
   userId    String
   role      String   @default("MEMBER") // OWNER, ADMIN, MEMBER
   createdAt DateTime @default(now())
-  
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([projectId, userId])
   @@map("project_members")
 }
 
 // Project Milestone
 model ProjectMilestone {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   title       String
   description String?
   dueDate     DateTime?
-  status      String   @default("TODO") // TODO, IN_PROGRESS, DONE
+  status      String    @default("TODO") // TODO, IN_PROGRESS, DONE
   projectId   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   @@map("project_milestones")
 }
 
@@ -302,57 +325,60 @@ model PortfolioItem {
   viewCount   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  media       PortfolioMedia[]
-  comments    PortfolioComment[]
-  likes       PortfolioLike[]
-  
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media    PortfolioMedia[]
+  comments PortfolioComment[]
+  likes    PortfolioLike[]
+
+  // Indexes for performance optimization
+  @@index([userId, createdAt(sort: Desc)]) // For user's portfolio (most recent first)
+  @@index([createdAt(sort: Desc)]) // For global portfolio feed
   @@map("portfolio_items")
 }
 
 // Portfolio Media
 model PortfolioMedia {
-  id             String   @id @default(uuid())
-  url            String
-  type           String   // IMAGE, VIDEO, AUDIO, DESIGN
+  id              String   @id @default(uuid())
+  url             String
+  type            String // IMAGE, VIDEO, AUDIO, DESIGN
   portfolioItemId String
-  createdAt      DateTime @default(now())
-  
+  createdAt       DateTime @default(now())
+
   portfolioItem PortfolioItem @relation(fields: [portfolioItemId], references: [id], onDelete: Cascade)
-  
+
   @@map("portfolio_media")
 }
 
 // Portfolio Comment
 model PortfolioComment {
-  id             String   @id @default(uuid())
-  content        String
+  id              String   @id @default(uuid())
+  content         String
   portfolioItemId String
-  authorId       String
-  parentId       String?
-  likeCount      Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  
-  portfolioItem PortfolioItem @relation(fields: [portfolioItemId], references: [id], onDelete: Cascade)
-  author         User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent         PortfolioComment? @relation("PortfolioCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies        PortfolioComment[] @relation("PortfolioCommentReplies")
-  
+  authorId        String
+  parentId        String?
+  likeCount       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  portfolioItem PortfolioItem      @relation(fields: [portfolioItemId], references: [id], onDelete: Cascade)
+  author        User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent        PortfolioComment?  @relation("PortfolioCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       PortfolioComment[] @relation("PortfolioCommentReplies")
+
   @@map("portfolio_comments")
 }
 
 // Portfolio Like
 model PortfolioLike {
-  id             String   @id @default(uuid())
+  id              String   @id @default(uuid())
   portfolioItemId String
-  userId         String
-  createdAt      DateTime @default(now())
-  
+  userId          String
+  createdAt       DateTime @default(now())
+
   portfolioItem PortfolioItem @relation(fields: [portfolioItemId], references: [id], onDelete: Cascade)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([portfolioItemId, userId])
   @@map("portfolio_likes")
 }
@@ -370,26 +396,26 @@ model PartnerStore {
   address     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  equipments  PartnerStoreEquipment[]
-  
+
+  equipments PartnerStoreEquipment[]
+
   @@map("partner_stores")
 }
 
 // Partner Store Equipment
 model PartnerStoreEquipment {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  price       Float?
-  category    String?
+  id             String   @id @default(uuid())
+  name           String
+  description    String?
+  price          Float?
+  category       String?
   partnerStoreId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  partnerStore PartnerStore @relation(fields: [partnerStoreId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  partnerStore PartnerStore                 @relation(fields: [partnerStoreId], references: [id], onDelete: Cascade)
   images       PartnerStoreEquipmentImage[]
-  
+
   @@map("partner_store_equipments")
 }
 
@@ -397,12 +423,12 @@ model PartnerStoreEquipment {
 model PartnerStoreEquipmentImage {
   id          String   @id @default(uuid())
   url         String
-  key         String   // S3 key or storage key
+  key         String // S3 key or storage key
   equipmentId String
   createdAt   DateTime @default(now())
-  
-  equipment   PartnerStoreEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
-  
+
+  equipment PartnerStoreEquipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+
   @@map("partner_store_equipment_images")
 }
 
@@ -414,23 +440,23 @@ model ChatRoom {
   archived  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  members   ChatRoomMember[]
-  messages  ChatMessage[]
-  
+
+  members  ChatRoomMember[]
+  messages ChatMessage[]
+
   @@map("chat_rooms")
 }
 
 // Chat Room Member
 model ChatRoomMember {
-  id        String   @id @default(uuid())
-  roomId    String
-  userId    String
-  joinedAt  DateTime @default(now())
-  
-  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id       String   @id @default(uuid())
+  roomId   String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([roomId, userId])
   @@map("chat_room_members")
 }
@@ -443,30 +469,29 @@ model ChatMessage {
   senderId  String
   type      String   @default("TEXT") // TEXT, IMAGE, FILE
   createdAt DateTime @default(now())
-  
-  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  sender    User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
-  
+
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
   @@map("chat_messages")
 }
 
 // Report Model
 model Report {
-  id                    String   @id @default(uuid())
-  reason                String
-  category              String
-  reportedUserId        String?
-  reportedProjectId     String?
+  id                      String   @id @default(uuid())
+  reason                  String
+  category                String
+  reportedUserId          String?
+  reportedProjectId       String?
   reportedPortfolioItemId String?
-  reporterId            String
-  status                String   @default("PENDING") // PENDING, REVIEWED, REJECTED, CONCLUDED
-  conclusion            String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  reporter              User     @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
-  reportedUser          User?    @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
-  
+  reporterId              String
+  status                  String   @default("PENDING") // PENDING, REVIEWED, REJECTED, CONCLUDED
+  conclusion              String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  reporter     User  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser User? @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
   @@map("reports")
 }
-
