@@ -1,0 +1,741 @@
+---
+alwaysApply: true
+---
+# Spotlight Backend - Organization Rules and Standards
+
+## 📖 Project Context
+
+**Spotlight Backend** is a RESTful API built with NestJS for connecting creative professionals, managing projects, and optimizing creative workflows. The API enables:
+
+- User authentication and authorization
+- User profile management and social features (follow/unfollow)
+- Activity feed (posts, comments, reactions)
+- Project management with collaboration
+- Portfolio showcase
+- Real-time chat communication
+- Partner stores and equipment rental
+- Analytics and reporting
+- Notifications system
+
+**Type**: NestJS REST API  
+**Database**: PostgreSQL with Prisma ORM  
+**Focus**: Scalability, security, and maintainability
+
+---
+
+## 🌐 Language and Code Standards
+
+### **CRITICAL RULE: Everything Must Be in English**
+
+**All code, documentation, comments, and messages MUST be written in English:**
+
+- ✅ **Code**: Class names, method names, variable names, constants
+- ✅ **Comments**: All code comments and JSDoc
+- ✅ **Documentation**: README files, API documentation, Swagger descriptions
+- ✅ **Error Messages**: Exception messages, validation errors, API responses
+- ✅ **Log Messages**: All log statements (INFO, WARN, ERROR, DEBUG)
+- ✅ **Test Names**: Test class names, test method names, descriptions
+- ✅ **Commit Messages**: Git commit messages and branch names
+- ✅ **Configuration**: Property names, configuration files
+- ❌ **NO Portuguese** in code, comments, or documentation
+- ❌ **NO Portuguese** in error messages or API responses (unless user-facing)
+
+**Exception**: Only user-facing messages in API responses that are specifically meant for end-users can be in Portuguese (if required by business rules), but internal code must always be in English.
+
+---
+
+## 🛠️ Technology Stack
+
+### Core
+- **Framework**: NestJS 11+
+- **Language**: TypeScript 5.7+
+- **ORM**: Prisma 5.7+
+- **Database**: PostgreSQL 14+
+
+### Authentication & Security
+- **JWT**: @nestjs/jwt for token management
+- **Passport**: @nestjs/passport for authentication strategies
+- **BCrypt**: Password hashing
+- **CORS**: Configured for frontend origin
+
+### Communication
+- **WebSocket**: @nestjs/websockets + Socket.io for real-time chat
+- **Email**: Nodemailer for transactional emails
+
+### Storage
+- **AWS S3**: File uploads (avatars, covers, images, documents)
+- **Multer**: File upload handling
+
+### Other Libraries
+- **class-validator**: DTO validation
+- **class-transformer**: Object transformation
+- **uuid**: Unique identifier generation
+
+---
+
+## 📁 Directory Structure
+
+### Main Structure
+
+```
+src/
+├── auth/              # Authentication module
+├── users/             # User management module
+├── posts/             # Posts/Feed module
+├── projects/          # Project management module
+├── chat/              # Real-time chat module (WebSocket)
+├── portfolio/         # Portfolio module
+├── partner-stores/    # Partner stores module
+├── comments/          # Comments module (shared)
+├── notifications/     # Notifications module
+├── dashboard/         # Analytics/Dashboard module
+├── reports/           # Reports/Moderation module
+├── common/            # Shared utilities, guards, decorators
+├── config/            # Configuration modules
+└── prisma/            # Prisma service and module
+```
+
+### Module Structure Pattern
+
+Each module should follow this structure:
+
+```
+{module}/
+├── dto/               # Data Transfer Objects
+│   ├── {action}-{entity}.dto.ts
+│   └── {entity}.response.dto.ts
+├── {module}.controller.ts
+├── {module}.service.ts
+├── {module}.module.ts
+└── {module}.spec.ts    # Tests
+```
+
+---
+
+## 🎯 Module Implementation Checklist
+
+### ✅ Completed Modules
+
+- [x] **Auth Module** - Authentication, JWT, refresh tokens, password reset
+- [x] **Users Module** - User CRUD, profile management, follow/unfollow, search
+- [x] **Prisma Schema** - Complete database schema with all entities
+- [x] **Common Infrastructure** - Guards, decorators, Prisma service
+
+### ⏳ Pending Modules
+
+- [ ] **Posts Module** - Feed posts, comments, reactions
+- [ ] **Projects Module** - Project CRUD, members, milestones, archive
+- [ ] **Chat Module** - WebSocket real-time chat, rooms, messages
+- [ ] **Portfolio Module** - Portfolio items, media, likes, views, comments
+- [ ] **Partner Stores Module** - Stores CRUD, equipment management, images
+- [ ] **Comments Module** - Shared comment functionality (portfolio, posts)
+- [ ] **Notifications Module** - User notifications, real-time updates
+- [ ] **Dashboard Module** - Analytics, metrics, statistics
+- [ ] **Reports Module** - Content moderation, user reports
+
+---
+
+## 🔐 Authentication Module (`/src/auth/`)
+
+### Structure
+
+```
+auth/
+├── dto/
+│   ├── login.dto.ts
+│   ├── register.dto.ts
+│   ├── refresh-token.dto.ts
+│   ├── forgot-password.dto.ts
+│   ├── reset-password.dto.ts
+│   └── update-password.dto.ts
+├── strategies/
+│   ├── jwt.strategy.ts
+│   └── jwt-refresh.strategy.ts
+├── auth.controller.ts
+├── auth.service.ts
+└── auth.module.ts
+```
+
+### Endpoints
+
+- `POST /api/auth/register` - Register new user (Public)
+- `POST /api/auth/login` - Login (Public)
+- `POST /api/auth/refresh-token` - Refresh access token (Public)
+- `POST /api/auth/logout` - Logout (Protected)
+- `POST /api/auth/forgot-password` - Request password reset (Public)
+- `POST /api/auth/reset-password` - Reset password with token (Public)
+- `PUT /api/auth/update-password` - Update password (Protected)
+
+### Response Format
+
+**Login/Register Response:**
+```typescript
+{
+  jwtToken: string;
+  refreshToken: string;
+  userId: string | number;
+}
+```
+
+### Rules
+
+- ✅ Use `@Public()` decorator for public endpoints
+- ✅ Hash passwords with bcrypt (10 rounds)
+- ✅ Generate refresh tokens with UUID
+- ✅ Store refresh tokens in database with expiration
+- ✅ Validate email uniqueness on register
+- ✅ Implement rate limiting for login attempts (TODO)
+- ✅ Implement email service for password reset (TODO)
+
+---
+
+## 👥 Users Module (`/src/users/`)
+
+### Structure
+
+```
+users/
+├── dto/
+│   ├── update-user-profile.dto.ts
+│   └── change-availability.dto.ts
+├── users.controller.ts
+├── users.service.ts
+└── users.module.ts
+```
+
+### Endpoints
+
+- `GET /api/users/me` - Get current user profile (Protected)
+- `GET /api/users` - Search users (Protected, query: `?search=term`)
+- `GET /api/users/:id/public` - Get public user profile (Protected)
+- `PUT /api/users/me` - Update profile (Protected)
+- `POST /api/users/follow/:id` - Follow user (Protected)
+- `DELETE /api/users/unfollow/:id` - Unfollow user (Protected)
+- `GET /api/users/followed` - Get followed users (Protected, query: `?userId=id`)
+- `GET /api/users/followers` - Get followers (Protected, query: `?userId=id`)
+- `PUT /api/users/me/:availability` - Change availability status (Protected)
+- `DELETE /api/users/:id/disable` - Disable user (Protected, Admin only)
+- `PUT /api/users/me/images` - Upload avatar/cover (Protected, multipart/form-data)
+- `POST /api/users/me/resume` - Upload resume (Protected, multipart/form-data)
+- `DELETE /api/users/me/resume` - Delete resume (Protected)
+- `DELETE /api/users/me/locations/:id` - Delete location (Protected)
+- `DELETE /api/users/me/social/:id` - Delete social link (Protected)
+- `DELETE /api/users/me/websites/:id` - Delete website (Protected)
+- `GET /api/users/preferences` - Get user preferences (Protected)
+- `PUT /api/users/preferences` - Update preferences (Protected)
+
+### Response Format
+
+**User Profile Response:**
+```typescript
+{
+  id: string;
+  name: string;
+  email: string;
+  areaActivity: string;
+  role: string;
+  title: string;
+  location: string;
+  isPro: boolean;
+  isVerified: boolean;
+  avatar: string;
+  coverImage: string;
+  metrics: {
+    followers: number;
+    following: number;
+    projects: number;
+    rating: number;
+  };
+  bio: string;
+  shortBio: string;
+  specialties: string[];
+  website: string;
+  socialLinks: SocialLink[];
+  websites: Website[];
+  locations: Location[];
+  profileLevel: number;
+  resume: string;
+  chatAvailability: string;
+  industry: string;
+  timeOfExperience: string;
+  notableClients: string;
+  whatsappNumber: string;
+  availability: Availability;
+  rates: Rate;
+  isFollowing: boolean;
+  isFollowed: boolean;
+  isBlocked: boolean;
+  collaborations: number;
+  enabled: boolean;
+}
+```
+
+### Rules
+
+- ✅ Never expose password in responses
+- ✅ Include follow status when current user is viewing profile
+- ✅ Validate file types and sizes on upload
+- ✅ Store files in S3/Cloudinary (TODO: implement)
+- ✅ Support pagination for search results
+- ✅ Calculate metrics dynamically
+
+---
+
+## 📝 Posts Module (`/src/posts/`) - TODO
+
+### Endpoints to Implement
+
+- `GET /api/posts` - List posts (Protected, pagination)
+- `POST /api/posts` - Create post (Protected, multipart/form-data)
+- `GET /api/posts/:id` - Get post by ID (Protected)
+- `PUT /api/posts/:id` - Update post (Protected, owner only)
+- `DELETE /api/posts/:id` - Delete post (Protected, owner only)
+- `GET /api/posts/:id/comments` - Get post comments (Protected)
+- `POST /api/posts/:id/comments` - Create comment (Protected)
+- `DELETE /api/posts/comments/:id` - Delete comment (Protected, owner only)
+- `GET /api/posts/:id/reactions` - Get post reactions (Protected)
+- `POST /api/posts/:id/reactions` - Add reaction (Protected)
+- `DELETE /api/posts/:id/reactions` - Remove reaction (Protected)
+
+### DTOs Needed
+
+- `CreatePostDto` - content, description, equipment, location, software, image
+- `UpdatePostDto` - Same as CreatePostDto
+- `PostResponseDto` - Full post with author, comments count, reactions
+- `CreateCommentDto` - content, parentId (for nested comments)
+- `CommentResponseDto` - Comment with author info
+- `CreateReactionDto` - type (LIKE, LOVE, HAHA, WOW, SAD, ANGRY)
+- `ReactionResponseDto` - Reaction with user info
+
+### Rules
+
+- ✅ Posts can have images (multipart/form-data)
+- ✅ Comments support nested replies (parentId)
+- ✅ Reactions are unique per user per post
+- ✅ Include author information in responses
+- ✅ Support pagination for comments
+
+---
+
+## 🎯 Projects Module (`/src/projects/`) - TODO
+
+### Endpoints to Implement
+
+- `GET /api/projects/list` - List projects (Protected, query: `?projectId=id&archived=true`)
+- `POST /api/projects` - Create project (Protected)
+- `GET /api/projects/:id` - Get project (Protected, query: `?archived=true`)
+- `PUT /api/projects/:id` - Update project (Protected, owner/admin only)
+- `DELETE /api/projects/:id` - Delete project (Protected, owner only)
+- `PATCH /api/projects/:id/archive` - Archive project (Protected, owner only)
+- `GET /api/projects/list/colaboration` - Get collaboration projects (Protected, query: `?userId=id`)
+- `GET /api/projects/:id/members` - List project members (Protected)
+- `POST /api/projects/:id/members` - Add member (Protected, owner/admin only)
+- `DELETE /api/projects/:id/members/:memberId` - Remove member (Protected, owner/admin only)
+- `GET /api/projects/:id/milestones` - List milestones (Protected)
+- `POST /api/projects/:id/milestones` - Create milestone (Protected, owner/admin only)
+- `PUT /api/projects/:id/milestones/:milestoneId` - Update milestone (Protected, owner/admin only)
+- `DELETE /api/projects/:id/milestones/:milestoneId` - Delete milestone (Protected, owner/admin only)
+- `PUT /api/projects/:id/image` - Upload project image (Protected, multipart/form-data, owner only)
+
+### DTOs Needed
+
+- `CreateProjectDto` - title, description, category, priority, status, members[], milestones[]
+- `UpdateProjectDto` - Same as CreateProjectDto
+- `ProjectResponseDto` - Full project with owner, members, milestones
+- `AddMemberDto` - userId, role
+- `MemberResponseDto` - User info with role
+- `CreateMilestoneDto` - title, description, dueDate, status, order
+- `MilestoneResponseDto` - Milestone with status
+
+### Rules
+
+- ✅ Projects have owner (creator)
+- ✅ Members have roles: OWNER, ADMIN, MEMBER
+- ✅ Only owner/admin can manage members and milestones
+- ✅ Milestones have status: TODO, IN_PROGRESS, DONE
+- ✅ Projects can be archived (soft delete)
+- ✅ Support filtering by archived status
+
+---
+
+## 💬 Chat Module (`/src/chat/`) - TODO
+
+### WebSocket Endpoints
+
+- `WS /api/ws` - WebSocket connection (query: `?token=jwt&room=roomId`)
+
+### HTTP Endpoints
+
+- `GET /api/chat` - List chat rooms (Protected)
+- `GET /api/chat/:roomId` - Get room info (Protected)
+- `GET /api/chat/:roomId/messages` - Get messages (Protected, pagination: `?page=0&size=20`)
+- `POST /api/chat/:userId` - Create/Get chat room with user (Protected)
+
+### WebSocket Events
+
+**Client → Server:**
+- `message` - Send message
+- `join` - Join room
+- `leave` - Leave room
+- `typing` - Typing indicator
+
+**Server → Client:**
+- `message` - New message received
+- `user_joined` - User joined room
+- `user_left` - User left room
+- `typing` - User typing
+
+### DTOs Needed
+
+- `ChatRoomResponseDto` - id, name, isGroup, archived, members[], createdAt
+- `ChatMessageRequestDto` - content, type (TEXT, IMAGE, FILE)
+- `ChatMessageResponseDto` - id, content, sender, senderName, type, createdAt
+- `CreateChatRoomDto` - userId (for 1-on-1) or name, userIds[] (for group)
+
+### Rules
+
+- ✅ Authenticate WebSocket connections with JWT
+- ✅ Support 1-on-1 and group chats
+- ✅ Store messages in database
+- ✅ Support pagination for message history
+- ✅ Support message types: TEXT, IMAGE, FILE
+- ✅ Implement typing indicators
+- ✅ Archive rooms (soft delete)
+
+---
+
+## 🎨 Portfolio Module (`/src/portfolio/`) - TODO
+
+### Endpoints to Implement
+
+- `GET /api/portfolio` - List portfolio items (Protected, query: `?userId=id`)
+- `POST /api/portfolio` - Create portfolio item (Protected, multipart/form-data)
+- `GET /api/portfolio/:id` - Get portfolio item (Protected)
+- `PUT /api/portfolio/:id` - Update portfolio item (Protected, owner only)
+- `DELETE /api/portfolio/:id` - Delete portfolio item (Protected, owner only)
+- `POST /api/portfolio/:id/like` - Like portfolio item (Protected)
+- `POST /api/portfolio/:id/unlike` - Unlike portfolio item (Protected)
+- `GET /api/portfolio/:id/likes` - Get likes (Protected)
+- `POST /api/portfolio/:id/view` - Record view (Protected)
+- `GET /api/comments/:itemId` - Get portfolio comments (Protected, pagination)
+- `POST /api/comments/:itemId` - Create comment (Protected)
+- `PUT /api/comments/:itemId/:commentId` - Update comment (Protected, owner only)
+- `DELETE /api/comments/:itemId/:commentId` - Delete comment (Protected, owner only)
+- `POST /api/comments/:itemId/:commentId/like` - Like comment (Protected)
+- `POST /api/comments/:itemId/:commentId/unlike` - Unlike comment (Protected)
+
+### DTOs Needed
+
+- `CreatePortfolioItemDto` - title, description, files[] (multipart)
+- `UpdatePortfolioItemDto` - Same as CreatePostDto
+- `PortfolioItemResponseDto` - id, title, description, media[], likeCount, viewCount, createdAt
+- `CreateCommentDto` - content, parentId (for nested comments)
+- `CommentResponseDto` - Comment with author, likeCount, replies[]
+- `LikeResponseDto` - userId, username, likedAt
+
+### Rules
+
+- ✅ Portfolio items can have multiple media files
+- ✅ Media types: IMAGE, VIDEO, AUDIO, DESIGN
+- ✅ Track views and likes
+- ✅ Comments support nested replies
+- ✅ Comments can be liked
+- ✅ Support pagination for comments
+
+---
+
+## 🏪 Partner Stores Module (`/src/partner-stores/`) - TODO
+
+### Endpoints to Implement
+
+- `GET /api/partner-stores` - List stores (Protected)
+- `GET /api/partner-stores/:id` - Get store (Protected)
+- `POST /api/partner-stores` - Create store (Protected, Admin only)
+- `PUT /api/partner-stores/:id` - Update store (Protected, Admin only)
+- `DELETE /api/partner-stores/:id` - Delete store (Protected, Admin only)
+- `POST /api/partner-stores/:id/images` - Upload store images (Protected, multipart/form-data, Admin only)
+- `GET /api/partner-stores/equipments` - List equipments (Protected, query: `?partnerStoreId=id`)
+- `GET /api/partner-stores/equipments/:id` - Get equipment (Protected)
+- `POST /api/partner-stores/equipments` - Create equipment (Protected, Admin only)
+- `PUT /api/partner-stores/equipments/:id` - Update equipment (Protected, Admin only)
+- `DELETE /api/partner-stores/equipments/:id` - Delete equipment (Protected, Admin only)
+- `POST /api/partner-stores/equipments/:id/images` - Upload equipment images (Protected, multipart/form-data, Admin only)
+- `DELETE /api/partner-stores/equipments/:id/images` - Delete image (Protected, query: `?key=imageKey`, Admin only)
+
+### DTOs Needed
+
+- `CreatePartnerStoreDto` - name, description, website, email, phone, address
+- `UpdatePartnerStoreDto` - Same as CreatePartnerStoreDto
+- `PartnerStoreResponseDto` - Full store with logo, coverImage, equipments[]
+- `CreateEquipmentDto` - name, description, price, category, partnerStoreId
+- `UpdateEquipmentDto` - Same as CreateEquipmentDto
+- `EquipmentResponseDto` - Equipment with images[]
+
+### Rules
+
+- ✅ Stores have logo and cover image
+- ✅ Equipment can have multiple images
+- ✅ Only admins can manage stores and equipment
+- ✅ Store images: logo, coverImage
+- ✅ Equipment images: multiple files
+
+---
+
+## 📊 Reports Module (`/src/reports/`) - TODO
+
+### Endpoints to Implement
+
+- `GET /api/reports` - List reports (Protected, Admin only)
+- `GET /api/reports/:id` - Get report (Protected, Admin only)
+- `POST /api/reports/new` - Create report (Protected)
+- `PUT /api/reports/:id` - Update report status (Protected, Admin only)
+
+### DTOs Needed
+
+- `CreateReportDto` - reportedUserId?, reportedProjectId?, reportedPortfolioItemId?, reason, category
+- `UpdateReportDto` - conclusion, status (PENDING, REVIEWED, REJECTED, CONCLUDED)
+- `ReportResponseDto` - Full report with reporter, reported content, status, conclusion
+
+### Rules
+
+- ✅ Reports can target users, projects, or portfolio items
+- ✅ Only admins can view and update reports
+- ✅ Status workflow: PENDING → REVIEWED/REJECTED → CONCLUDED
+- ✅ Include conclusion when status is updated
+
+---
+
+## 🔔 Notifications Module (`/src/notifications/`) - TODO
+
+### Endpoints to Implement
+
+- `GET /api/notifications` - List notifications (Protected, pagination)
+- `GET /api/notifications/:id` - Get notification (Protected)
+- `PUT /api/notifications/:id/read` - Mark as read (Protected)
+- `PUT /api/notifications/read-all` - Mark all as read (Protected)
+
+### DTOs Needed
+
+- `NotificationResponseDto` - id, type, title, message, relatedObjectId, relatedObjectType, metadata, read, createdAt
+
+### Rules
+
+- ✅ Notifications types: FOLLOW, COMMENT, LIKE, PROJECT_INVITE, etc.
+- ✅ Support pagination
+- ✅ Track read/unread status
+- ✅ Include related object reference (post, project, user, etc.)
+- ✅ Support metadata for additional info
+
+---
+
+## 📈 Dashboard Module (`/src/dashboard/`) - TODO
+
+### Endpoints to Implement
+
+- `GET /api/dashboard/stats` - Get user statistics (Protected)
+- `GET /api/dashboard/analytics` - Get analytics data (Protected)
+
+### DTOs Needed
+
+- `DashboardStatsDto` - followers, following, projects, portfolioItems, views, likes
+- `AnalyticsDto` - Various analytics metrics
+
+### Rules
+
+- ✅ Calculate statistics dynamically
+- ✅ Include time-based analytics (daily, weekly, monthly)
+- ✅ Support filtering by date range
+
+---
+
+## 🧪 Testing Standards
+
+### Test Structure
+
+```
+{module}/
+├── {module}.controller.spec.ts    # Controller tests
+├── {module}.service.spec.ts        # Service tests
+└── {module}.e2e-spec.ts           # E2E tests
+```
+
+### Test Types
+
+1. **Unit Tests** - Test individual methods with mocks
+2. **Integration Tests** - Test service + repository integration
+3. **E2E Tests** - Test complete HTTP request/response flow
+
+### Rules
+
+- ✅ Use `@nestjs/testing` for test utilities
+- ✅ Mock Prisma service in unit tests
+- ✅ Use test database for integration/E2E tests
+- ✅ Test all error cases
+- ✅ Test validation rules
+- ✅ Use descriptive test names in English
+
+---
+
+## 🔒 Security Rules
+
+### Authentication
+
+- ✅ All endpoints (except public) require JWT authentication
+- ✅ Use `@Public()` decorator for public endpoints
+- ✅ Validate JWT token on every request
+- ✅ Refresh tokens stored in database with expiration
+- ✅ Implement token blacklist for logout (TODO)
+
+### Authorization
+
+- ✅ Check resource ownership before update/delete
+- ✅ Implement role-based access control (RBAC) for admin endpoints
+- ✅ Validate user permissions in service layer
+
+### Data Protection
+
+- ✅ Never expose passwords in responses
+- ✅ Hash passwords with bcrypt (10 rounds)
+- ✅ Validate and sanitize all user inputs
+- ✅ Use DTOs for all request/response data
+- ✅ Implement rate limiting (TODO)
+
+### File Upload
+
+- ✅ Validate file types (images, PDFs only)
+- ✅ Limit file sizes (20MB max)
+- ✅ Scan files for malware (TODO)
+- ✅ Store files in S3/Cloudinary, not local filesystem
+
+---
+
+## 📝 Code Conventions
+
+### Naming
+
+- **Controllers**: `{Module}Controller` (e.g., `UsersController`)
+- **Services**: `{Module}Service` (e.g., `UsersService`)
+- **DTOs**: `{Action}{Entity}Dto` (e.g., `CreateUserDto`, `UpdateUserDto`)
+- **Response DTOs**: `{Entity}ResponseDto` (e.g., `UserResponseDto`)
+- **Modules**: `{Module}Module` (e.g., `UsersModule`)
+
+### File Organization
+
+- ✅ One class per file
+- ✅ DTOs in `dto/` folder
+- ✅ Services contain business logic
+- ✅ Controllers handle HTTP requests/responses
+- ✅ Use dependency injection
+
+### Validation
+
+- ✅ Use `class-validator` decorators in DTOs
+- ✅ Use `@UsePipes(ValidationPipe)` globally
+- ✅ Return clear error messages
+- ✅ Validate file uploads
+
+### Error Handling
+
+- ✅ Use NestJS built-in exceptions
+- ✅ Create custom exceptions when needed
+- ✅ Return appropriate HTTP status codes
+- ✅ Include error details in development mode
+
+---
+
+## 🚀 Deployment Checklist
+
+### Environment Variables
+
+- [ ] `DATABASE_URL` - PostgreSQL connection string
+- [ ] `JWT_SECRET` - Secret key for JWT (min 256 bits)
+- [ ] `JWT_REFRESH_SECRET` - Secret key for refresh tokens
+- [ ] `AWS_ACCESS_KEY_ID` - AWS S3 access key
+- [ ] `AWS_SECRET_ACCESS_KEY` - AWS S3 secret key
+- [ ] `AWS_S3_BUCKET` - S3 bucket name
+- [ ] `SMTP_HOST` - Email server host
+- [ ] `SMTP_USER` - Email username
+- [ ] `SMTP_PASS` - Email password
+- [ ] `CORS_ORIGIN` - Frontend URL
+
+### Pre-Deployment
+
+- [ ] Run all tests
+- [ ] Generate Prisma client
+- [ ] Run database migrations
+- [ ] Build production bundle
+- [ ] Set up environment variables
+- [ ] Configure CORS
+- [ ] Set up file storage (S3/Cloudinary)
+- [ ] Configure email service
+- [ ] Set up monitoring/logging
+
+---
+
+## 📚 Implementation Priority
+
+### Phase 1: Core Features (Current)
+- ✅ Authentication & Authorization
+- ✅ User Management
+- ✅ Database Schema
+
+### Phase 2: Social Features
+- [ ] Posts/Feed Module
+- [ ] Comments Module
+- [ ] Follow/Unfollow System
+
+### Phase 3: Collaboration
+- [ ] Projects Module
+- [ ] Portfolio Module
+- [ ] Chat Module
+
+### Phase 4: Business Features
+- [ ] Partner Stores Module
+- [ ] Notifications Module
+- [ ] Reports Module
+- [ ] Dashboard Module
+
+### Phase 5: Enhancements
+- [ ] File upload to S3/Cloudinary
+- [ ] Email service implementation
+- [ ] Rate limiting
+- [ ] Caching (Redis)
+- [ ] Search optimization
+- [ ] Analytics improvements
+
+---
+
+## 🔄 Migration from Spring Boot
+
+### Key Differences
+
+1. **Language**: Java → TypeScript
+2. **Framework**: Spring Boot → NestJS
+3. **ORM**: JPA/Hibernate → Prisma
+4. **Validation**: Bean Validation → class-validator
+5. **Dependency Injection**: Spring DI → NestJS DI
+
+### Migration Notes
+
+- ✅ Keep same API endpoints structure
+- ✅ Maintain same response formats
+- ✅ Preserve business logic
+- ✅ Update authentication flow (JWT structure)
+- ✅ Migrate database schema to Prisma
+- ✅ Adapt WebSocket implementation (Spring STOMP → Socket.io)
+
+---
+
+## 📖 References
+
+- [NestJS Documentation](https://docs.nestjs.com/)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [class-validator](https://github.com/typestack/class-validator)
+- [Socket.io Documentation](https://socket.io/docs/)
+
+---
+
+**Last updated**: 2024  
+**Maintainer**: Spotlight Backend Team  
+**Document Version**: 1.0
