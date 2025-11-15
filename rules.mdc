@@ -738,6 +738,553 @@ users/
 
 ---
 
+## 🏗️ Professional Module Architecture Pattern
+
+### Core Principles
+
+All modules MUST follow these professional patterns to ensure robustness, maintainability, and scalability:
+
+#### 1. **Layered Architecture (Separation of Concerns)**
+
+```
+┌─────────────────────────────────────┐
+│  Controller Layer                   │ ← HTTP Request/Response handling
+│  - Receives HTTP requests            │
+│  - Validates input (DTOs)           │
+│  - Delegates to Service             │
+│  - Returns formatted responses      │
+└─────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────┐
+│  Service Layer                      │ ← Business Logic
+│  - Contains business rules          │
+│  - Orchestrates operations          │
+│  - Handles transactions             │
+│  - Returns domain objects           │
+└─────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────┐
+│  Repository Layer (Prisma)          │ ← Data Access
+│  - Database queries                 │
+│  - Data transformations              │
+│  - Transaction management           │
+└─────────────────────────────────────┘
+```
+
+**Rules:**
+- ✅ Controllers MUST NOT contain business logic
+- ✅ Services MUST NOT access HTTP context directly
+- ✅ Services MUST use PrismaService for data access
+- ✅ Each layer has clear responsibilities
+
+#### 2. **Professional Response Structure**
+
+All API responses MUST follow a consistent, professional structure:
+
+**Authentication/Registration Response:**
+```typescript
+interface AuthenticationResponse {
+  tokens: {
+    accessToken: string;        // JWT token
+    refreshToken: string;       // Refresh token
+    tokenType: 'Bearer';        // Token type
+    expiresIn: number;          // Expiration in seconds
+    expiresAt: Date;            // Expiration timestamp
+  };
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    areaActivity: string | null;
+    avatar: string | null;
+    coverImage: string | null;
+    role: string;
+  };
+  account: {
+    status: string;
+    enabled: boolean;
+    firstLogin: boolean;
+    plan: PlanInfo | null;
+    isPro: boolean;
+    isVerified: boolean;
+    createdAt: Date;
+  };
+  session: {
+    authenticatedAt: Date;
+    ipAddress: string | null;
+    requiresPasswordChange: boolean;
+    deviceInfo?: {
+      userAgent?: string;
+      platform?: string;
+    };
+  };
+}
+```
+
+**Standard Success Response:**
+```typescript
+interface SuccessResponse<T> {
+  success: true;
+  data: T;
+  message?: string;
+  metadata?: {
+    timestamp: Date;
+    requestId?: string;
+  };
+}
+```
+
+**Error Response:**
+```typescript
+interface ErrorResponse {
+  success: false;
+  error: {
+    code: string;              // Error code (e.g., 'USER_NOT_FOUND')
+    message: string;           // Human-readable message
+    details?: any;             // Additional error details
+    timestamp: Date;
+    path?: string;             // API path
+  };
+}
+```
+
+**Rules:**
+- ✅ Always return structured responses (never raw data)
+- ✅ Include metadata when relevant (timestamps, pagination, etc.)
+- ✅ Use consistent error format across all endpoints
+- ✅ Include user-friendly messages
+- ✅ Never expose sensitive information in errors
+
+#### 3. **Dependency Injection Pattern**
+
+```typescript
+@Injectable()
+export class {Module}Service {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+    private readonly logger: Logger,
+    // ... other dependencies
+  ) {}
+}
+```
+
+**Rules:**
+- ✅ Use constructor injection (never property injection)
+- ✅ Mark services with `@Injectable()`
+- ✅ Use `private readonly` for dependencies
+- ✅ Inject Logger for proper logging
+- ✅ Inject ConfigService for configuration
+
+#### 4. **DTO Pattern (Data Transfer Objects)**
+
+```typescript
+// Request DTO
+export class Create{Entity}Dto {
+  @ApiProperty({ description: '...', example: '...' })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(3)
+  @MaxLength(100)
+  name: string;
+  
+  @ApiProperty({ description: '...', example: '...' })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+}
+
+// Response DTO
+export class {Entity}ResponseDto {
+  @ApiProperty()
+  id: string;
+  
+  @ApiProperty()
+  name: string;
+  
+  @ApiProperty()
+  createdAt: Date;
+  
+  // ... other fields
+}
+```
+
+**Rules:**
+- ✅ Separate DTOs for request and response
+- ✅ Use `class-validator` decorators for validation
+- ✅ Use `@ApiProperty()` for Swagger documentation
+- ✅ Include examples in API documentation
+- ✅ Validate all inputs before processing
+- ✅ Never expose internal fields (passwords, tokens, etc.)
+
+#### 5. **Error Handling Pattern**
+
+```typescript
+// In Service
+async someMethod(id: string) {
+  const entity = await this.prisma.entity.findUnique({
+    where: { id },
+  });
+  
+  if (!entity) {
+    throw new NotFoundException({
+      code: 'ENTITY_NOT_FOUND',
+      message: `Entity with ID ${id} not found`,
+    });
+  }
+  
+  if (!entity.enabled) {
+    throw new BadRequestException({
+      code: 'ENTITY_DISABLED',
+      message: 'Entity is disabled',
+    });
+  }
+  
+  // ... business logic
+}
+```
+
+**Rules:**
+- ✅ Use appropriate HTTP exceptions (NotFoundException, BadRequestException, etc.)
+- ✅ Include error codes for client handling
+- ✅ Provide clear, user-friendly messages
+- ✅ Log errors with context (userId, requestId, etc.)
+- ✅ Never expose stack traces in production
+- ✅ Handle Prisma errors gracefully
+
+#### 6. **Logging Pattern**
+
+```typescript
+@Injectable()
+export class {Module}Service {
+  private readonly logger = new Logger({Module}Service.name);
+  
+  async someMethod(userId: string, data: CreateDto) {
+    this.logger.log(`Creating entity for user ${userId}`);
+    
+    try {
+      const result = await this.prisma.entity.create({
+        data: { ... },
+      });
+      
+      this.logger.log(`Entity created successfully: ${result.id}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Failed to create entity: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+}
+```
+
+**Rules:**
+- ✅ Use NestJS Logger (not console.log)
+- ✅ Include context in log messages (userId, entityId, etc.)
+- ✅ Log at appropriate levels:
+  - `log()` - Normal operations
+  - `warn()` - Warnings, deprecated usage
+  - `error()` - Errors with stack traces
+  - `debug()` - Debug information (development only)
+- ✅ Log important operations (create, update, delete)
+- ✅ Log authentication events
+- ✅ Never log sensitive data (passwords, tokens, etc.)
+
+#### 7. **Transaction Pattern**
+
+```typescript
+async createWithRelations(data: CreateDto) {
+  return this.prisma.$transaction(async (tx) => {
+    // Create main entity
+    const entity = await tx.entity.create({
+      data: { ... },
+    });
+    
+    // Create related entities
+    await tx.relatedEntity.createMany({
+      data: relatedData.map(item => ({
+        ...item,
+        entityId: entity.id,
+      })),
+    });
+    
+    return entity;
+  });
+}
+```
+
+**Rules:**
+- ✅ Use transactions for multi-step operations
+- ✅ Rollback on any error
+- ✅ Keep transactions short
+- ✅ Avoid nested transactions when possible
+
+#### 8. **Validation Pattern**
+
+```typescript
+// In DTO
+export class CreateDto {
+  @IsEmail({}, { message: 'Invalid email format' })
+  @IsNotEmpty({ message: 'Email is required' })
+  email: string;
+  
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+    message: 'Password must contain uppercase, lowercase, and number',
+  })
+  password: string;
+}
+
+// In Controller
+@Post()
+async create(@Body() createDto: CreateDto) {
+  // Validation happens automatically via ValidationPipe
+  return this.service.create(createDto);
+}
+```
+
+**Rules:**
+- ✅ Validate at DTO level (not in service)
+- ✅ Use descriptive validation messages
+- ✅ Validate file types and sizes
+- ✅ Sanitize inputs (trim strings, normalize emails)
+- ✅ Validate business rules in service layer
+
+#### 9. **Security Pattern**
+
+```typescript
+// In Controller
+@UseGuards(JwtAuthGuard)
+@Post()
+async create(
+  @CurrentUser() user: CurrentUserPayload,
+  @Body() createDto: CreateDto,
+) {
+  // Check permissions
+  if (user.role !== 'ADMIN' && user.id !== createDto.userId) {
+    throw new ForbiddenException('Insufficient permissions');
+  }
+  
+  return this.service.create(user.id, createDto);
+}
+
+// In Service
+async create(userId: string, createDto: CreateDto) {
+  // Verify ownership
+  const existing = await this.prisma.entity.findUnique({
+    where: { id: createDto.entityId },
+  });
+  
+  if (existing.userId !== userId) {
+    throw new ForbiddenException('You do not own this resource');
+  }
+  
+  // ... create logic
+}
+```
+
+**Rules:**
+- ✅ Always verify user permissions
+- ✅ Check resource ownership before operations
+- ✅ Use role-based access control (RBAC)
+- ✅ Never trust client-side data
+- ✅ Validate user context in service layer
+- ✅ Use `@Public()` decorator for public endpoints only
+
+#### 10. **Query Optimization Pattern**
+
+```typescript
+// Good: Select only needed fields
+const user = await this.prisma.user.findUnique({
+  where: { id },
+  select: {
+    id: true,
+    name: true,
+    email: true,
+    avatar: true,
+    // Never select password
+  },
+});
+
+// Good: Use include for relations
+const project = await this.prisma.project.findUnique({
+  where: { id },
+  include: {
+    owner: {
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+      },
+    },
+    members: {
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    },
+  },
+});
+
+// Good: Pagination
+const posts = await this.prisma.post.findMany({
+  skip: (page - 1) * limit,
+  take: limit,
+  orderBy: { createdAt: 'desc' },
+});
+```
+
+**Rules:**
+- ✅ Always use `select` to limit returned fields
+- ✅ Never select sensitive fields (passwords, tokens)
+- ✅ Use `include` for relations (not separate queries)
+- ✅ Implement pagination for list endpoints
+- ✅ Use indexes for frequently queried fields
+- ✅ Avoid N+1 queries
+
+#### 11. **Module Structure Pattern**
+
+```
+{module}/
+├── dto/
+│   ├── create-{entity}.dto.ts
+│   ├── update-{entity}.dto.ts
+│   ├── {entity}-response.dto.ts
+│   └── index.ts                    # Export all DTOs
+├── interfaces/
+│   └── {module}.interfaces.ts     # TypeScript interfaces
+├── {module}.controller.ts
+├── {module}.service.ts
+├── {module}.module.ts
+└── {module}.spec.ts                # Tests
+```
+
+**Rules:**
+- ✅ Organize DTOs in `dto/` folder
+- ✅ Create interfaces for complex types
+- ✅ Export DTOs from index.ts for clean imports
+- ✅ Keep controllers thin (delegate to services)
+- ✅ Keep services focused (single responsibility)
+
+#### 12. **Swagger Documentation Pattern**
+
+```typescript
+@ApiTags('module-name')
+@Controller('module')
+export class ModuleController {
+  @Post()
+  @ApiOperation({
+    summary: 'Create a new entity',
+    description: 'Creates a new entity with the provided data',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Entity created successfully',
+    type: EntityResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Validation failed',
+    schema: {
+      example: {
+        statusCode: 400,
+        message: ['email must be an email'],
+        error: 'Bad Request',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing token',
+  })
+  async create(@Body() createDto: CreateDto) {
+    return this.service.create(createDto);
+  }
+}
+```
+
+**Rules:**
+- ✅ Document all endpoints with Swagger
+- ✅ Include operation summaries and descriptions
+- ✅ Document all possible responses
+- ✅ Include request/response examples
+- ✅ Document query parameters and path parameters
+- ✅ Keep documentation up-to-date
+
+#### 13. **Testing Pattern**
+
+```typescript
+describe('{Module}Service', () => {
+  let service: {Module}Service;
+  let prisma: PrismaService;
+  
+  beforeEach(async () => {
+    // Setup test module
+    const module = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    
+    service = module.get<{Module}Service>({Module}Service);
+    prisma = module.get<PrismaService>(PrismaService);
+    
+    // Clean database
+    await TestHelpers.cleanup();
+  });
+  
+  describe('create', () => {
+    it('should create entity successfully', async () => {
+      const dto = { name: 'Test', email: 'test@example.com' };
+      const result = await service.create(dto);
+      
+      expect(result).toBeDefined();
+      expect(result.name).toBe(dto.name);
+    });
+    
+    it('should throw error when email already exists', async () => {
+      // Create first entity
+      await service.create({ name: 'Test', email: 'test@example.com' });
+      
+      // Try to create duplicate
+      await expect(
+        service.create({ name: 'Test2', email: 'test@example.com' })
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+});
+```
+
+**Rules:**
+- ✅ Test all service methods
+- ✅ Test success cases
+- ✅ Test error cases
+- ✅ Test validation rules
+- ✅ Use real database (no mocks)
+- ✅ Clean database between tests
+- ✅ Use descriptive test names
+
+### Module Quality Checklist
+
+Before considering a module complete, verify:
+
+- [ ] **Architecture**: Follows layered architecture pattern
+- [ ] **Responses**: Returns professional, structured responses
+- [ ] **DTOs**: All inputs/outputs use DTOs with validation
+- [ ] **Error Handling**: Proper error handling with codes and messages
+- [ ] **Logging**: Appropriate logging at all levels
+- [ ] **Security**: Permission checks and ownership validation
+- [ ] **Documentation**: Complete Swagger documentation
+- [ ] **Tests**: Unit and integration tests for service and controller
+- [ ] **Transactions**: Multi-step operations use transactions
+- [ ] **Query Optimization**: Efficient queries with proper selects
+- [ ] **Validation**: Input validation at DTO level
+- [ ] **Code Quality**: Clean, readable, maintainable code
+
+---
+
 **Last updated**: 2024  
 **Maintainer**: Spotlight Backend Team  
 **Document Version**: 1.0
